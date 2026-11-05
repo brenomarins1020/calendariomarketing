@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendário de Marketing</title>
+<meta name="description" content="Calendário de publicações de marketing por canal, com sincronização ao vivo.">
+<meta name="theme-color" content="#4f46e5">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
+<style>
+  .live{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#047857;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:20px;padding:3px 10px}
+  .live::before{content:"";width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.2)}
+  .live.off{color:#b45309;background:#fffbeb;border-color:#fde68a}
+  .live.off::before{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.2)}
+  .live.load{color:var(--muted);background:#f3f4f8;border-color:var(--line)}
+  .live.load::before{background:#9aa3b2;box-shadow:none}
+  :root{
+    --bg:#f4f5f8; --panel:#fff; --line:#e6e8ee; --week:#b9bfd3; --text:#1d2433; --muted:#6b7385;
+    --accent:#4f46e5; --accent-soft:#eef0ff; --today:#fffaeb; --weekend:#f9fafb;
+    --ch-w:190px; --day-w:136px; --wk-h:32px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+  button{font:inherit;cursor:pointer}
+  input,select{font:inherit}
+
+  /* Top bar */
+  .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 22px;background:var(--panel);border-bottom:1px solid var(--line)}
+  .top h1{font-size:18px;margin:0 10px 0 0;font-weight:700}
+  .nav{display:flex;align-items:center;gap:6px}
+  .nav .month{min-width:160px;text-align:center;font-weight:600;font-size:16px}
+  .icon-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:#fff;font-size:18px;line-height:1;color:var(--text)}
+  .icon-btn:hover{background:var(--accent-soft);border-color:#c9ccf5}
+  .btn{padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--text)}
+  .btn:hover{background:#f3f4f8}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.primary:hover{background:#4338ca}
+  .btn.danger{color:#dc2626;border-color:#f5c2c2}
+  .btn.danger:hover{background:#fef2f2}
+  .stats{color:var(--muted);font-size:13px}
+  .sp{flex:1}
+  .tiny{font-size:12px;padding:6px 10px}
+
+  main{padding:18px 22px 40px;display:flex;flex-direction:column;gap:18px}
+  .hint-bar{color:var(--muted);font-size:12.5px;margin:-6px 2px 0}
+
+  /* Calendar */
+  .scroller{overflow:auto;max-height:calc(100vh - 210px);min-height:320px;background:#fff;border:1px solid var(--line);border-radius:12px;cursor:grab;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .scroller.panning{cursor:grabbing}
+  .grid{display:grid;width:max-content;user-select:none}
+
+  .corner{position:sticky;left:0;top:0;z-index:6;background:#fff;border-right:2px solid var(--line);border-bottom:1px solid var(--line);display:flex;align-items:flex-end;padding:10px 14px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .wk{position:sticky;top:0;z-index:3;height:var(--wk-h);background:#f1f2f7;border-bottom:1px solid var(--line);border-left:1px solid var(--line);padding:0 10px;display:flex;align-items:center;gap:8px;font-size:12px;white-space:nowrap}
+  .wk .lbl{position:sticky;left:calc(var(--ch-w) + 10px);display:flex;gap:8px}
+  .wk b{color:var(--accent)}
+  .wk span{color:var(--muted)}
+  .dh{position:sticky;top:var(--wk-h);z-index:3;background:#fff;border-left:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px 10px;display:flex;align-items:baseline;gap:6px}
+  .dh .wdn{font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.04em}
+  .dh .dn{font-size:18px;font-weight:600}
+  .dh.we{background:var(--weekend)}
+  .dh.today{background:var(--accent);color:#fff}
+  .dh.today .wdn{color:#dfe0ff}
+
+  .ch{position:sticky;left:0;z-index:4;background:#fff;border-right:2px solid var(--line);border-bottom:1px solid var(--line);padding:10px 8px 10px 14px;display:flex;align-items:flex-start;gap:6px}
+  .ch-name{font-weight:600;flex:1;cursor:text;border-radius:5px;padding:2px 4px;margin:-2px -4px;word-break:break-word}
+  .ch-name:hover{background:#f3f4f8}
+  .ch-count{font-size:11px;color:var(--muted);background:#f1f2f7;border-radius:10px;padding:2px 7px;margin-top:1px}
+  .ch-tools{display:flex;flex-direction:column;gap:2px;opacity:0;transition:opacity .15s}
+  .ch:hover .ch-tools{opacity:1}
+  .ch-tools button{border:0;background:none;color:var(--muted);width:20px;height:18px;border-radius:4px;font-size:12px;line-height:1;padding:0}
+  .ch-tools button:hover{background:#f1f2f7;color:var(--text)}
+  .ch-tools .ch-del:hover{background:#fee2e2;color:#dc2626}
+  .ch-add{align-items:center}
+  .ch-add input{width:100%;border:1px dashed #c9cdd8;border-radius:8px;padding:7px 10px;background:#fafbfc}
+  .ch-add input:focus{outline:none;border-color:var(--accent);border-style:solid;background:#fff}
+  .filler{border-bottom:1px solid var(--line);background:#fcfcfd}
+
+  .cell{min-height:84px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px;display:flex;flex-direction:column;gap:5px;transition:background .1s}
+  .cell.we{background:var(--weekend)}
+  .cell.today{background:var(--today)}
+  .cell.over{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)}
+  .wk-start{border-left:3px solid var(--week) !important}
+
+  .add{margin-top:auto;border:1px dashed transparent;background:none;border-radius:7px;color:#b4b9c6;font-size:18px;line-height:1;padding:4px 0;cursor:pointer}
+  .cell:hover .add{border-color:#c9cdd8;color:var(--accent)}
+  .add:hover{background:var(--accent-soft)!important;border-color:var(--accent)!important}
+
+  .post{--c:#64748b;position:relative;background:color-mix(in srgb,var(--c) 13%,#fff);border-left:4px solid var(--c);border-radius:7px;padding:6px 24px 6px 8px;cursor:grab;font-size:12.5px;line-height:1.25;box-shadow:0 1px 1px rgba(16,24,40,.05)}
+  .post:hover{box-shadow:0 2px 6px rgba(16,24,40,.12)}
+  .post .t{font-weight:600;word-break:break-word}
+  .post .p{font-size:11px;color:#555d70;margin-top:2px;display:flex;align-items:center;gap:4px}
+  .post .chk{position:absolute;top:6px;right:6px;width:15px;height:15px;border-radius:50%;border:1.5px solid #b7bccb;background:#fff;font-size:9px;line-height:1;color:transparent;padding:0;display:grid;place-items:center}
+  .post .chk:hover{border-color:#10b981}
+  .post.done .chk{background:#10b981;border-color:#10b981;color:#fff}
+  .post.done .t{color:#3d4456}
+  .post.dragging{opacity:.4}
+  .post.dim{opacity:.25}
+
+  /* People */
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .card-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  .card-h h2{font-size:16px;margin:0}
+  .muted{color:var(--muted);font-size:13px}
+  .add-person{display:flex;gap:8px;margin-bottom:14px;max-width:460px}
+  .add-person input{flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 11px}
+  .add-person input:focus{outline:none;border-color:var(--accent)}
+  .people{display:flex;flex-wrap:wrap;gap:10px}
+  .person{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:7px 8px 7px 10px;background:#fff;transition:all .12s}
+  .person.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  .person input[type=color]{width:20px;height:20px;border:0;padding:0;border-radius:50%;background:none;cursor:pointer}
+  .person input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+  .person input[type=color]::-webkit-color-swatch{border:0;border-radius:50%}
+  .person input[type=color]::-moz-color-swatch{border:0;border-radius:50%}
+  .pname{font-weight:600;cursor:pointer}
+  .pcount{font-size:12px;color:var(--muted)}
+  .person button{border:0;background:none;color:var(--muted);border-radius:5px;width:22px;height:22px;padding:0}
+  .person button:hover{background:#f1f2f7;color:var(--text)}
+  .person .pdel:hover{background:#fee2e2;color:#dc2626}
+  .empty{color:var(--muted);font-size:13px;padding:6px 0}
+
+  /* Dialog */
+  dialog{border:0;border-radius:14px;padding:0;width:min(440px,92vw);box-shadow:0 20px 50px rgba(16,24,40,.25)}
+  dialog::backdrop{background:rgba(20,24,40,.35)}
+  dialog form{padding:20px 22px;display:flex;flex-direction:column;gap:12px}
+  dialog h3{margin:0;font-size:17px}
+  dialog .sub{margin:-8px 0 2px;color:var(--muted);font-size:13px}
+  dialog label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600;color:#3d4456}
+  dialog label.row{flex-direction:row;align-items:center;gap:8px;font-weight:500}
+  dialog input[type=text],dialog select{border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-weight:400;color:var(--text);background:#fff}
+  dialog input[type=text]:focus,dialog select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  dialog .hint{margin:0;font-size:12.5px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 10px}
+  dialog .actions{display:flex;gap:8px;margin-top:6px}
+
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:#1d2433;color:#fff;padding:9px 16px;border-radius:9px;font-size:13px;opacity:0;pointer-events:none;transition:all .2s;z-index:100}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>📅 Calendário de Marketing</h1>
+  <div class="nav">
+    <button class="icon-btn" id="prev" title="Mês anterior">‹</button>
+    <div class="month" id="monthLabel"></div>
+    <button class="icon-btn" id="next" title="Próximo mês">›</button>
+    <button class="btn tiny" id="todayBtn">Hoje</button>
+  </div>
+  <span class="stats" id="stats"></span>
+  <span class="live load" id="live" title="Mudanças feitas em qualquer dispositivo aparecem aqui automaticamente">Conectando…</span>
+  <span class="sp"></span>
+  <button class="btn tiny" id="exportBtn" title="Baixar um backup dos dados">Exportar backup</button>
+  <button class="btn tiny" id="importBtn" title="Restaurar um backup">Importar</button>
+  <input type="file" id="importFile" accept="application/json" hidden>
+</div>
+
+<main>
+  <div class="scroller" id="scroller"><div class="grid" id="grid"></div></div>
+  <div class="hint-bar">Dica: clique e arraste o fundo do calendário para rolar para os lados · arraste um post para mudar de dia ou de canal (segure <b>Ctrl</b> ao soltar para duplicar) · clique no nome do canal para renomear · clique no ✓ para marcar como publicado.</div>
+
+  <section class="card">
+    <div class="card-h">
+      <h2>Responsáveis</h2>
+      <span class="muted">Cadastre aqui quem cuida dos posts. Clique em um nome para destacar só os posts dessa pessoa.</span>
+    </div>
+    <form class="add-person" id="addPerson">
+      <input id="personInput" placeholder="Nome do responsável" required autocomplete="off">
+      <button class="btn primary">Adicionar</button>
+    </form>
+    <div class="people" id="people"></div>
+  </section>
+</main>
+
+<dialog id="dlg"><form id="dlgForm" method="dialog"></form></dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+const COLORS = ['#4f46e5','#0ea5e9','#10b981','#f59e0b','#ef4444','#ec4899','#8b5cf6','#14b8a6','#f97316','#64748b'];
+const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const MONTHS_S = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const WD = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const WD_L = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+
+const $ = s => document.querySelector(s);
+const grid = $('#grid'), scroller = $('#scroller'), dlg = $('#dlg'), dlgForm = $('#dlgForm');
+
+function uid(){ return Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2,'0');
+const iso = (y,m,d) => `${y}-${pad(m+1)}-${pad(d)}`;
+const parseIso = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const fmtDate = s => { const d = parseIso(s); return `${WD_L[d.getDay()]}, ${d.getDate()} de ${MONTHS[d.getMonth()].toLowerCase()}`; };
+const fmtShort = s => { const d = parseIso(s); return `${d.getDate()}/${MONTHS_S[d.getMonth()]}`; };
+
+/* ---------------- Sync with server (live) ----------------
+   Every change is applied locally right away and sent to /api/op.
+   Every open tab polls /api/ver; when the version changes it reloads /api/state. */
+const CACHE_KEY = 'mktcal.cache.v2';
+let state = { channels: [], people: [], posts: [] };
+let ver = 0;
+try { const c = JSON.parse(localStorage.getItem(CACHE_KEY)); if (c?.state) state = c.state; } catch(e){}
+const cacheLocal = () => { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ state })); } catch(e){} };
+const getLastPerson = () => localStorage.getItem('mktcal.lastPerson') || '';
+const setLastPerson = id => localStorage.setItem('mktcal.lastPerson', id);
+
+let queue = [], sending = false, needFetch = false, online = null;
+const clone = v => JSON.parse(JSON.stringify(v));
+function upsert(c, v){
+  const arr = state[c]; const i = arr.findIndex(x => x.id === v.id);
+  if (i < 0) arr.push(v); else arr[i] = v;
+  return { t: 'put', c, v: clone(v) };
+}
+function remove(c, id){
+  state[c] = state[c].filter(x => x.id !== id);
+  return { t: 'del', c, id };
+}
+function commit(...ops){
+  queue.push(...ops.flat());
+  cacheLocal(); render(); flush();
+}
+
+async function flush(){
+  if (sending || !queue.length) return;
+  sending = true;
+  const batch = queue.splice(0);
+  try {
+    const r = await fetch('/api/op', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops: batch }) });
+    if (!r.ok) throw new Error(await r.text());
+    const { ver: nv } = await r.json();
+    if (nv === ver + 1) ver = nv; else needFetch = true;
+    setOnline(true);
+    sending = false;
+  } catch (e) {
+    queue.unshift(...batch);
+    setOnline(false);
+    sending = false;
+    setTimeout(flush, 3000);
+    return;
+  }
+  if (queue.length) flush();
+  else if (needFetch) pull();
+}
+
+async function pull(){
+  try {
+    const r = await fetch('/api/state', { cache: 'no-store' });
+    if (!r.ok) throw new Error();
+    const s = await r.json();
+    if (queue.length || sending){ needFetch = true; return; }
+    needFetch = false;
+    ver = s.ver;
+    state = { channels: s.channels, people: s.people, posts: s.posts };
+    cacheLocal(); safeRender(); setOnline(true);
+  } catch (e) { setOnline(false); }
+}
+
+let lastActivity = Date.now();
+['mousemove','keydown','touchstart','scroll'].forEach(ev => window.addEventListener(ev, () => lastActivity = Date.now(), { passive: true, capture: true }));
+async function poll(){
+  if (!document.hidden){
+    try {
+      const r = await fetch('/api/ver', { cache: 'no-store' });
+      if (!r.ok) throw new Error();
+      const { ver: v } = await r.json();
+      setOnline(true);
+      if (v > ver && !queue.length && !sending) await pull();
+    } catch (e) { setOnline(false); }
+  }
+  const idle = Date.now() - lastActivity > 5 * 60 * 1000;
+  setTimeout(poll, idle ? 10000 : 2500);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { lastActivity = Date.now(); pull(); } });
+
+function setOnline(ok){
+  if (online === ok) return; online = ok;
+  const el = $('#live');
+  el.className = 'live' + (ok ? '' : ' off');
+  el.textContent = ok ? 'Ao vivo' : 'Sem conexão — tentando de novo…';
+}
+
+// Avoid redrawing while the user is dragging or typing inside the calendar
+let pendingRender = false;
+function safeRender(){
+  const ae = document.activeElement;
+  const typing = ae && ae.tagName === 'INPUT' && (grid.contains(ae) || $('#people').contains(ae));
+  if (dragId || typing) { pendingRender = true; return; }
+  pendingRender = false; render();
+}
+document.addEventListener('focusout', () => setTimeout(() => { if (pendingRender) safeRender(); }, 0));
+const chans = () => [...state.channels].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+const now = new Date();
+const TODAY = iso(now.getFullYear(), now.getMonth(), now.getDate());
+let view = { y: now.getFullYear(), m: now.getMonth() };
+let focusPerson = null;
+
+const person = id => state.people.find(p => p.id === id);
+const channel = id => state.channels.find(c => c.id === id);
+const monthPrefix = () => `${view.y}-${pad(view.m+1)}-`;
+
+/* ---------------- Render ---------------- */
+function render(){
+  const { y, m } = view;
+  const n = new Date(y, m+1, 0).getDate();
+  const prefix = monthPrefix();
+  const monthPosts = state.posts.filter(p => p.date.startsWith(prefix)).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+
+  $('#monthLabel').textContent = `${MONTHS[m]} ${y}`;
+  const done = monthPosts.filter(p => p.done).length;
+  $('#stats').textContent = `${monthPosts.length} post${monthPosts.length===1?'':'s'} no mês · ${done} publicado${done===1?'':'s'}`;
+
+  grid.style.gridTemplateColumns = `var(--ch-w) repeat(${n}, var(--day-w))`;
+  let h = `<div class="corner" style="grid-row:1/span 2;grid-column:1">Canais</div>`;
+
+  // Week bands (Monday → Sunday)
+  let d = 1, w = 1;
+  while (d <= n){
+    const wd = new Date(y, m, d).getDay();
+    const end = Math.min(n, d + (7 - wd) % 7);
+    h += `<div class="wk ${d>1?'wk-start':''}" style="grid-row:1;grid-column:${d+1}/span ${end-d+1}"><span class="lbl"><b>Semana ${w}</b><span>${d === end ? d : d+'–'+end} ${MONTHS_S[m]}</span></span></div>`;
+    d = end + 1; w++;
+  }
+
+  // Day headers
+  const dayCls = [];
+  for (let d = 1; d <= n; d++){
+    const wd = new Date(y, m, d).getDay();
+    const cls = [(wd===1 && d>1)?'wk-start':'', (wd===0||wd===6)?'we':'', iso(y,m,d)===TODAY?'today':''].join(' ');
+    dayCls[d] = cls;
+    h += `<div class="dh ${cls}" style="grid-row:2;grid-column:${d+1}"><span class="wdn">${WD[wd]}</span><span class="dn">${d}</span></div>`;
+  }
+
+  // Index posts by cell
+  const byCell = {};
+  monthPosts.forEach(p => (byCell[p.channelId + '|' + p.date] ||= []).push(p));
+
+  chans().forEach((c, i) => {
+    const r = i + 3;
+    const count = monthPosts.filter(p => p.channelId === c.id).length;
+    h += `<div class="ch" style="grid-row:${r};grid-column:1">
+      <span class="ch-name" data-ch="${c.id}" title="Clique para renomear">${esc(c.name)}</span>
+      <span class="ch-count" title="Posts neste mês">${count}</span>
+      <span class="ch-tools">
+        <button class="ch-up" data-ch="${c.id}" title="Mover para cima">▲</button>
+        <button class="ch-del" data-ch="${c.id}" title="Remover canal">✕</button>
+        <button class="ch-down" data-ch="${c.id}" title="Mover para baixo">▼</button>
+      </span></div>`;
+    for (let d = 1; d <= n; d++){
+      const date = iso(y,m,d);
+      const posts = (byCell[c.id + '|' + date] || []).map(postHtml).join('');
+      h += `<div class="cell ${dayCls[d]}" data-ch="${c.id}" data-date="${date}" style="grid-row:${r};grid-column:${d+1}">${posts}<button class="add" title="Adicionar post">+</button></div>`;
+    }
+  });
+
+  const r = state.channels.length + 3;
+  h += `<div class="ch ch-add" style="grid-row:${r};grid-column:1"><form id="addChannel"><input name="name" placeholder="+ Novo canal" autocomplete="off"></form></div>`;
+  h += `<div class="filler" style="grid-row:${r};grid-column:2/-1"></div>`;
+
+  grid.innerHTML = h;
+  renderPeople();
+}
+
+function postHtml(p){
+  const pe = person(p.personId);
+  const color = pe ? pe.color : '#94a3b8';
+  const dim = focusPerson && p.personId !== focusPerson ? 'dim' : '';
+  return `<div class="post ${p.done?'done':''} ${dim}" draggable="true" data-id="${p.id}" style="--c:${color}" title="Clique para editar · arraste para mover">
+    <button class="chk" title="${p.done?'Publicado — clique para desmarcar':'Marcar como publicado'}">✓</button>
+    <div class="t">${esc(p.title)}</div>
+    <div class="p">${pe ? esc(pe.name) : '<i>sem responsável</i>'}</div>
+  </div>`;
+}
+
+function renderPeople(){
+  const prefix = monthPrefix();
+  const box = $('#people');
+  if (!state.people.length){
+    box.innerHTML = `<div class="empty">Nenhum responsável ainda. Adicione o primeiro acima 👆</div>`;
+    return;
+  }
+  box.innerHTML = state.people.map(p => {
+    const mine = state.posts.filter(x => x.personId === p.id && x.date.startsWith(prefix));
+    const done = mine.filter(x => x.done).length;
+    return `<div class="person ${focusPerson===p.id?'active':''}">
+      <input type="color" value="${p.color}" data-pc="${p.id}" title="Mudar cor">
+      <span class="pname" data-p="${p.id}" title="Destacar posts desta pessoa">${esc(p.name)}</span>
+      <span class="pcount">${mine.length} no mês · ${done} publicado${done===1?'':'s'}</span>
+      <button class="pedit" data-p="${p.id}" title="Renomear">✎</button>
+      <button class="pdel" data-p="${p.id}" title="Remover">✕</button>
+    </div>`;
+  }).join('');
+}
+
+/* ---------------- Dialog helpers ---------------- */
+let dlgSubmit = null;
+function openDialog(html, onSubmit, focusSel){
+  dlgForm.innerHTML = html;
+  dlgSubmit = onSubmit;
+  dlg.showModal();
+  const f = dlgForm.querySelector(focusSel || 'input[type=text]');
+  if (f){ f.focus(); f.select?.(); }
+}
+dlgForm.addEventListener('submit', e => {
+  e.preventDefault();
+  if (dlgSubmit && dlgSubmit(new FormData(dlgForm)) === false) return;
+  dlg.close();
+});
+dlgForm.addEventListener('click', e => {
+  const act = e.target.closest('[data-act]')?.dataset.act;
+  if (act === 'cancel') dlg.close();
+  if (act === 'delete' && dlgForm.dataset.postId){
+    const id = dlgForm.dataset.postId;
+    dlg.close(); commit(remove('posts', id)); toast('Post excluído');
+  }
+});
+dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+dlg.addEventListener('close', () => { delete dlgForm.dataset.postId; });
+
+function promptText(title, value, placeholder, cb){
+  openDialog(`<h3>${esc(title)}</h3>
+    <input type="text" name="v" required value="${esc(value)}" placeholder="${esc(placeholder||'')}" autocomplete="off">
+    <div class="actions"><span class="sp"></span><button type="button" class="btn" data-act="cancel">Cancelar</button><button class="btn primary">Salvar</button></div>`,
+    fd => { const v = fd.get('v').trim(); if (!v) return false; cb(v); });
+}
+
+function openPost({ id, ch, date }){
+  const p = id ? state.posts.find(x => x.id === id) : null;
+  const c = channel(p ? p.channelId : ch);
+  const dt = p ? p.date : date;
+  const sel = p ? p.personId : (person(getLastPerson()) ? getLastPerson() : (state.people[0]?.id || ''));
+  const opts = state.people.map(pe => `<option value="${pe.id}" ${pe.id===sel?'selected':''}>${esc(pe.name)}</option>`).join('');
+  openDialog(`
+    <h3>${p ? 'Editar post' : 'Novo post'}</h3>
+    <p class="sub">${esc(c?.name)} · ${fmtDate(dt)}</p>
+    <label>Nome do post
+      <input type="text" name="title" required autocomplete="off" value="${p ? esc(p.title) : ''}" placeholder="Ex.: Dicas para quem vai prestar vestibular">
+    </label>
+    <label>Responsável
+      <select name="person">${state.people.length ? '' : '<option value="">— nenhum cadastrado —</option>'}${opts}${p && !person(p.personId) && state.people.length ? '<option value="" selected>— sem responsável —</option>' : ''}</select>
+    </label>
+    ${state.people.length ? '' : '<p class="hint">Você ainda não cadastrou responsáveis. Adicione na seção <b>Responsáveis</b>, abaixo do calendário.</p>'}
+    ${p ? `<label class="row"><input type="checkbox" name="done" ${p.done?'checked':''}> Já foi publicado</label>` : ''}
+    <div class="actions">
+      ${p ? '<button type="button" class="btn danger" data-act="delete">Excluir</button>' : ''}
+      <span class="sp"></span>
+      <button type="button" class="btn" data-act="cancel">Cancelar</button>
+      <button class="btn primary">${p ? 'Salvar' : 'Adicionar'}</button>
+    </div>`,
+    fd => {
+      const title = fd.get('title').trim();
+      if (!title) return false;
+      const personId = fd.get('person') || '';
+      setLastPerson(personId);
+      if (p){ commit(upsert('posts', { ...p, title, personId, done: fd.get('done') === 'on' })); }
+      else { commit(upsert('posts', { id: uid(), title, personId, channelId: ch, date, done: false, ts: Date.now() })); toast('Post adicionado'); }
+    });
+  if (p) dlgForm.dataset.postId = p.id;
+}
+
+/* ---------------- Calendar interactions ---------------- */
+let suppressClick = false;
+grid.addEventListener('click', e => {
+  if (suppressClick) return;
+  const t = e.target;
+  if (t.closest('.chk')){
+    const p = state.posts.find(x => x.id === t.closest('.post').dataset.id);
+    p.done = !p.done; commit(upsert('posts', p));
+    toast(p.done ? 'Marcado como publicado ✓' : 'Desmarcado');
+    return;
+  }
+  const post = t.closest('.post');
+  if (post) return openPost({ id: post.dataset.id });
+  if (t.closest('.add')){
+    const cell = t.closest('.cell');
+    return openPost({ ch: cell.dataset.ch, date: cell.dataset.date });
+  }
+  const chName = t.closest('.ch-name');
+  if (chName){
+    const c = channel(chName.dataset.ch);
+    return promptText('Renomear canal', c.name, 'Nome do canal', v => { c.name = v; commit(upsert('channels', c)); });
+  }
+  const del = t.closest('.ch-del');
+  if (del){
+    const c = channel(del.dataset.ch);
+    const count = state.posts.filter(p => p.channelId === c.id).length;
+    if (!confirm(`Remover o canal "${c.name}"?` + (count ? `\n\nOs ${count} post(s) desse canal também serão apagados.` : ''))) return;
+    const gone = state.posts.filter(p => p.channelId === c.id).map(p => p.id);
+    commit(remove('channels', c.id), gone.map(id => remove('posts', id))); toast('Canal removido');
+    return;
+  }
+  const mv = t.closest('.ch-up, .ch-down');
+  if (mv){
+    const list = chans();
+    const i = list.findIndex(c => c.id === mv.dataset.ch);
+    const j = i + (mv.classList.contains('ch-up') ? -1 : 1);
+    if (j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j], list[i]];
+    commit(list.map((c, k) => { c.order = k; return upsert('channels', c); }));
+  }
+});
+
+grid.addEventListener('dblclick', e => {
+  const cell = e.target.closest('.cell');
+  if (cell && !e.target.closest('.post, button')) openPost({ ch: cell.dataset.ch, date: cell.dataset.date });
+});
+
+grid.addEventListener('submit', e => {
+  if (e.target.id !== 'addChannel') return;
+  e.preventDefault();
+  const name = e.target.name.value.trim();
+  if (!name) return;
+  const order = Math.max(-1, ...state.channels.map(c => c.order ?? 0)) + 1;
+  commit(upsert('channels', { id: uid(), name, order }));
+  $('#addChannel input').focus();
+  toast(`Canal "${name}" criado`);
+});
+
+/* Drag & drop of posts */
+let dragId = null, overCell = null;
+grid.addEventListener('dragstart', e => {
+  const post = e.target.closest('.post');
+  if (!post) return;
+  dragId = post.dataset.id;
+  e.dataTransfer.effectAllowed = 'copyMove';
+  e.dataTransfer.setData('text/plain', dragId);
+  setTimeout(() => post.classList.add('dragging'), 0);
+});
+grid.addEventListener('dragover', e => {
+  const cell = e.target.closest('.cell');
+  if (!cell || !dragId) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = (e.ctrlKey || e.altKey) ? 'copy' : 'move';
+  if (overCell !== cell){ overCell?.classList.remove('over'); cell.classList.add('over'); overCell = cell; }
+});
+grid.addEventListener('drop', e => {
+  const cell = e.target.closest('.cell');
+  if (!cell || !dragId) return;
+  e.preventDefault();
+  const p = state.posts.find(x => x.id === dragId);
+  const copy = e.ctrlKey || e.altKey;
+  const target = { channelId: cell.dataset.ch, date: cell.dataset.date };
+  if (copy){
+    commit(upsert('posts', { ...p, ...target, id: uid(), done: false, ts: Date.now() }));
+    toast(`Post duplicado em ${channel(target.channelId).name} · ${fmtShort(target.date)}`);
+  } else if (p.channelId !== target.channelId || p.date !== target.date){
+    Object.assign(p, target, { ts: Date.now() });
+    commit(upsert('posts', p));
+    toast(`Movido para ${channel(target.channelId).name} · ${fmtShort(target.date)}`);
+  }
+  endDrag(); render();
+});
+grid.addEventListener('dragend', endDrag);
+function endDrag(){
+  dragId = null;
+  overCell?.classList.remove('over'); overCell = null;
+  grid.querySelectorAll('.dragging').forEach(x => x.classList.remove('dragging'));
+}
+// Auto-scroll sideways when dragging a post near the edges
+scroller.addEventListener('dragover', e => {
+  if (!dragId) return;
+  const r = scroller.getBoundingClientRect();
+  const left = r.left + parseInt(getComputedStyle(document.documentElement).getPropertyValue('--ch-w'));
+  if (e.clientX < left + 70) scroller.scrollLeft -= 24;
+  else if (e.clientX > r.right - 70) scroller.scrollLeft += 24;
+});
+
+/* Click-and-drag on the background to pan */
+let pan = null;
+scroller.addEventListener('mousedown', e => {
+  if (e.button !== 0 || e.target.closest('.post, button, input, .ch, form')) return;
+  pan = { x: e.clientX, y: e.clientY, sl: scroller.scrollLeft, st: scroller.scrollTop, moved: false };
+});
+window.addEventListener('mousemove', e => {
+  if (!pan) return;
+  const dx = e.clientX - pan.x, dy = e.clientY - pan.y;
+  if (!pan.moved && Math.abs(dx) + Math.abs(dy) < 5) return;
+  pan.moved = true;
+  scroller.classList.add('panning');
+  scroller.scrollLeft = pan.sl - dx;
+  scroller.scrollTop = pan.st - dy;
+});
+window.addEventListener('mouseup', () => {
+  if (pan?.moved){ suppressClick = true; setTimeout(() => suppressClick = false, 0); }
+  pan = null; scroller.classList.remove('panning');
+});
+// Mouse wheel over the day headers scrolls sideways
+scroller.addEventListener('wheel', e => {
+  if (e.target.closest('.dh, .wk') && Math.abs(e.deltaY) > Math.abs(e.deltaX)){
+    e.preventDefault(); scroller.scrollLeft += e.deltaY;
+  }
+}, { passive: false });
+
+function scrollToDay(day){
+  const el = grid.querySelector(`.dh:nth-of-type(1)`) && [...grid.querySelectorAll('.dh')][day-1];
+  if (!el) return;
+  const chW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--ch-w'));
+  scroller.scrollLeft = Math.max(0, el.offsetLeft - chW - 2 * el.offsetWidth);
+}
+
+/* ---------------- People ---------------- */
+$('#addPerson').addEventListener('submit', e => {
+  e.preventDefault();
+  const inp = $('#personInput');
+  const name = inp.value.trim();
+  if (!name) return;
+  const used = state.people.map(p => p.color);
+  const color = COLORS.find(c => !used.includes(c)) || COLORS[state.people.length % COLORS.length];
+  inp.value = '';
+  commit(upsert('people', { id: uid(), name, color }));
+  toast(`${name} adicionado(a)`);
+});
+$('#people').addEventListener('click', e => {
+  const t = e.target;
+  const name = t.closest('.pname');
+  if (name){ focusPerson = focusPerson === name.dataset.p ? null : name.dataset.p; return render(); }
+  const ed = t.closest('.pedit');
+  if (ed){ const p = person(ed.dataset.p); return promptText('Renomear responsável', p.name, 'Nome', v => { p.name = v; commit(upsert('people', p)); }); }
+  const del = t.closest('.pdel');
+  if (del){
+    const p = person(del.dataset.p);
+    const count = state.posts.filter(x => x.personId === p.id).length;
+    if (!confirm(`Remover "${p.name}"?` + (count ? `\n\nOs ${count} post(s) dessa pessoa continuam no calendário, mas ficam sem responsável.` : ''))) return;
+    if (focusPerson === p.id) focusPerson = null;
+    const orphaned = state.posts.filter(x => x.personId === p.id).map(x => upsert('posts', { ...x, personId: '' }));
+    commit(remove('people', p.id), orphaned);
+  }
+});
+$('#people').addEventListener('change', e => {
+  const c = e.target.closest('[data-pc]');
+  if (c) commit(upsert('people', person(c.dataset.pc)));
+});
+$('#people').addEventListener('input', e => {
+  const c = e.target.closest('[data-pc]');
+  if (!c) return;
+  person(c.dataset.pc).color = c.value;
+  grid.querySelectorAll('.post').forEach(el => {
+    const p = state.posts.find(x => x.id === el.dataset.id);
+    if (p?.personId === c.dataset.pc) el.style.setProperty('--c', c.value);
+  });
+});
+
+/* ---------------- Top bar ---------------- */
+function go(delta){
+  view.m += delta;
+  if (view.m < 0){ view.m = 11; view.y--; }
+  if (view.m > 11){ view.m = 0; view.y++; }
+  render(); scroller.scrollLeft = 0;
+}
+$('#prev').onclick = () => go(-1);
+$('#next').onclick = () => go(1);
+$('#todayBtn').onclick = () => { view = { y: now.getFullYear(), m: now.getMonth() }; render(); scrollToDay(now.getDate()); };
+
+$('#exportBtn').onclick = () => {
+  const blob = new Blob([JSON.stringify({ channels: state.channels, people: state.people, posts: state.posts }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `calendario-marketing-${TODAY}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+};
+$('#importBtn').onclick = () => $('#importFile').click();
+$('#importFile').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const s = JSON.parse(await f.text());
+    if (!Array.isArray(s.channels) || !Array.isArray(s.posts) || !Array.isArray(s.people)) throw 0;
+    if (!confirm('Substituir todos os dados atuais pelo backup?')) return;
+    const r = await fetch('/api/op', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reset: { channels: s.channels, people: s.people, posts: s.posts } }) });
+    if (!r.ok) throw 0;
+    await pull(); toast('Backup importado');
+  } catch { alert('Arquivo inválido.'); }
+  e.target.value = '';
+};
+
+let toastT;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+render();
+scrollToDay(now.getDate());
+pull().then(() => { setTimeout(poll, 2500); });
+</script>
+</body>
+</html>
