@@ -256,7 +256,16 @@
   .sec-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
   .sec-h h2{font-size:16px;font-weight:600;margin:0}
   .muted{color:var(--muted);font-size:13px}
-  .add-person{display:flex;gap:8px;margin-bottom:16px;max-width:480px}
+  .add-person{display:flex;gap:8px;margin-bottom:10px;max-width:640px;flex-wrap:wrap}
+  .add-person input#personInput{flex:1 1 200px}
+  .add-person input#phoneInput{flex:1 1 200px}
+  .wa-note{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--ink-2);background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--r-sm);padding:9px 12px;margin-bottom:16px;max-width:640px}
+  .wa-note .ic{color:var(--blue);margin-top:1px}
+  .pphone{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:#047857;font-variant-numeric:tabular-nums}
+  .pphone .ic{width:13px;height:13px}
+  .pphone.none{color:#B45309}
+  .wnum{font-size:11.5px;font-weight:500;color:var(--blue-700);background:var(--blue-50);border-radius:999px;padding:1px 7px;margin-left:6px}
+  .mday-h .left{display:flex;align-items:center}
   .add-person input{flex:1;min-width:0;height:38px;border:1px solid var(--line);border-radius:var(--r-sm);padding:0 12px;background:#fff;transition:border-color 140ms ease, box-shadow 140ms ease}
   .add-person input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-100)}
   .add-person .btn{height:38px}
@@ -404,8 +413,10 @@
     </div>
     <form class="add-person" id="addPerson">
       <input id="personInput" placeholder="Nome do responsável" aria-label="Nome do responsável" required autocomplete="off">
+      <input id="phoneInput" type="tel" inputmode="tel" placeholder="WhatsApp (DDD + número)" aria-label="WhatsApp com DDD" autocomplete="off">
       <button class="btn primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Adicionar</button>
     </form>
+    <p class="wa-note"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 01-12.4 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1121 11.5z"/></svg><span>Lembrete no WhatsApp: todo dia às <b>13h</b>, cada responsável recebe a lista dos posts dele marcados para o <b>dia seguinte</b> que ainda não foram publicados.</span></p>
     <div class="people" id="people"></div>
   </section>
 </main>
@@ -435,6 +446,7 @@ const ICON = {
   pencil: svg('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/>'),
   chart: svg('<path d="M3 20h18M7 16v-5M12 16V6M17 16v-8"/>'),
   info: svg('<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>'),
+  wa: svg('<path d="M21 11.5a8.4 8.4 0 01-12.4 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1121 11.5z"/>'),
 };
 
 function uid(){ return Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
@@ -445,6 +457,26 @@ const parseIso = s => { const [y,m,d] = s.split('-').map(Number); return new Dat
 const fmtDate = s => { const d = parseIso(s); return `${WD_L[d.getDay()]}, ${d.getDate()} de ${MONTHS[d.getMonth()].toLowerCase()}`; };
 const fmtShort = s => { const d = parseIso(s); return `${d.getDate()}/${MONTHS_S[d.getMonth()]}`; };
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+// Week of the year, Monday to Sunday; week 1 is the week that contains January 1st
+function weekOfYear(d){
+  const jan1 = new Date(d.getFullYear(), 0, 1);
+  const dayIdx = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - jan1) / 86400000);
+  return Math.floor((dayIdx + (jan1.getDay() + 6) % 7) / 7) + 1;
+}
+
+// Phone: stored as digits with country code (55 + DDD + number)
+function normPhone(v){
+  let d = String(v || '').replace(/\D/g, '');
+  if (!d) return '';
+  if (d.length === 10 || d.length === 11) d = '55' + d;
+  return (d.length >= 12 && d.length <= 13) ? d : null; // null = invalid
+}
+function fmtPhone(d){
+  if (!d) return '';
+  const m = d.match(/^55(\d{2})(\d{4,5})(\d{4})$/);
+  return m ? `(${m[1]}) ${m[2]}-${m[3]}` : '+' + d;
+}
 
 /* ---------------- Sync with Supabase (live) ----------------
    Every change is applied locally right away and saved to Supabase.
@@ -459,8 +491,8 @@ const MAP = {
     from: r => ({ id: r.id, name: r.name, order: r.ord }),
   },
   people: {
-    to:   v => ({ id: v.id, name: v.name, color: v.color, updated_at: new Date().toISOString() }),
-    from: r => ({ id: r.id, name: r.name, color: r.color }),
+    to:   v => ({ id: v.id, name: v.name, color: v.color, ...(noPhoneCol ? {} : { phone: v.phone || null }), updated_at: new Date().toISOString() }),
+    from: r => ({ id: r.id, name: r.name, color: r.color, phone: r.phone || '' }),
   },
   posts: {
     to:   v => ({ id: v.id, title: v.title, person_id: v.personId || null, channel_id: v.channelId, date: v.date, done: !!v.done, ts: v.ts || 0, updated_at: new Date().toISOString() }),
@@ -468,6 +500,7 @@ const MAP = {
   },
 };
 const COLLS = Object.keys(MAP);
+let noPhoneCol = false; // true until supabase/whatsapp.sql adds people.phone
 
 const CACHE_KEY = 'mktcal.cache.v3';
 let state = { channels: [], people: [], posts: [] };
@@ -510,7 +543,14 @@ async function flush(){
     for (const c of COLLS){
       const puts = ops.filter(o => o.c === c && o.t === 'put').map(o => MAP[c].to(o.v));
       const dels = ops.filter(o => o.c === c && o.t === 'del').map(o => o.id);
-      if (puts.length){ const { error } = await sb.from(c).upsert(puts); if (error) throw error; }
+      if (puts.length){
+        let { error } = await sb.from(c).upsert(puts);
+        if (error && c === 'people' && error.code === 'PGRST204' && !noPhoneCol){
+          noPhoneCol = true;
+          ({ error } = await sb.from(c).upsert(ops.filter(o => o.c === c && o.t === 'put').map(o => MAP[c].to(o.v))));
+        }
+        if (error) throw error;
+      }
       if (dels.length){ const { error } = await sb.from(c).delete().in('id', dels); if (error) throw error; }
     }
     sending = false;
@@ -668,12 +708,12 @@ function renderTimeline(){
   grid.style.gridTemplateColumns = `var(--ch-w) repeat(${n}, var(--day-w))`;
   let h = `<div class="corner" style="grid-row:1/span 2;grid-column:1">Canais</div>`;
 
-  let d = 1, w = 1;
+  let d = 1;
   while (d <= n){
     const wd = new Date(y, m, d).getDay();
     const end = Math.min(n, d + (7 - wd) % 7);
-    h += `<div class="wk ${d>1?'wk-start':''}" style="grid-row:1;grid-column:${d+1}/span ${end-d+1}"><span class="lbl"><b>Semana ${w}</b><span>${d === end ? d : d+'–'+end} ${MONTHS_S[m]}</span></span></div>`;
-    d = end + 1; w++;
+    h += `<div class="wk ${d>1?'wk-start':''}" style="grid-row:1;grid-column:${d+1}/span ${end-d+1}"><span class="lbl"><b>Semana ${weekOfYear(new Date(y, m, d))}</b><span>${d === end ? d : d+'–'+end} ${MONTHS_S[m]}</span></span></div>`;
+    d = end + 1;
   }
 
   const dayCls = [];
@@ -729,7 +769,7 @@ function renderCalendar(){
     const posts = inMonth ? (byDate[ds] || []).sort((a, b) => (order.get(a.channelId) ?? 99) - (order.get(b.channelId) ?? 99)) : [];
     const cls = ['mday', !inMonth && 'out', ds === TODAY && 'today', (wd === 0 || wd === 6) && 'we'].filter(Boolean).join(' ');
     h += `<div class="${cls}" ${inMonth ? `data-drop data-date="${ds}"` : ''}>
-      <div class="mday-h"><span class="dnum">${dt.getDate()}</span>${inMonth ? `<button class="add" data-date="${ds}" aria-label="Adicionar post em ${fmtDate(ds)}">${ICON.plus}</button>` : ''}</div>
+      <div class="mday-h"><span class="left"><span class="dnum">${dt.getDate()}</span>${wd === 1 || i === 0 ? `<span class="wnum" title="Semana ${weekOfYear(dt)} do ano">Sem. ${weekOfYear(dt)}</span>` : ''}</span>${inMonth ? `<button class="add" data-date="${ds}" aria-label="Adicionar post em ${fmtDate(ds)}">${ICON.plus}</button>` : ''}</div>
       <div class="mposts">${posts.map(p => postHtml(p, true)).join('')}</div>
     </div>`;
   }
@@ -859,8 +899,9 @@ function renderPeople(){
       <input type="color" value="${p.color}" data-pc="${p.id}" aria-label="Cor de ${esc(p.name)}" title="Mudar cor">
       <button class="pname" data-p="${p.id}" aria-pressed="${focusPerson === p.id}" title="Destacar posts desta pessoa">${esc(p.name)}</button>
       <span class="pcount">${mine.length} no mês · ${done} ${done === 1 ? 'publicado' : 'publicados'}</span>
+      ${p.phone ? `<span class="pphone" title="Recebe lembretes no WhatsApp">${ICON.wa}${fmtPhone(p.phone)}</span>` : `<span class="pphone none" title="Sem WhatsApp: não recebe lembretes">${ICON.wa}sem WhatsApp</span>`}
       <span class="tools">
-        <button class="pedit" data-p="${p.id}" aria-label="Renomear ${esc(p.name)}">${ICON.pencil}</button>
+        <button class="pedit" data-p="${p.id}" aria-label="Editar ${esc(p.name)}">${ICON.pencil}</button>
         <button class="pdel" data-p="${p.id}" aria-label="Remover ${esc(p.name)}">${ICON.x}</button>
       </span>
     </div>`;
@@ -1138,21 +1179,24 @@ function scrollToDay(day){
 /* ---------------- People ---------------- */
 $('#addPerson').addEventListener('submit', e => {
   e.preventDefault();
-  const inp = $('#personInput');
+  const inp = $('#personInput'), ph = $('#phoneInput');
   const name = inp.value.trim();
   if (!name) return;
+  const phone = normPhone(ph.value);
+  if (phone === null){ ph.setCustomValidity('Use DDD + número, ex.: (11) 98765-4321'); ph.reportValidity(); return; }
   const used = state.people.map(p => p.color.toLowerCase());
   const color = COLORS.find(c => !used.includes(c)) || COLORS[state.people.length % COLORS.length];
-  inp.value = '';
-  commit(upsert('people', { id: uid(), name, color }));
+  inp.value = ''; ph.value = '';
+  commit(upsert('people', { id: uid(), name, color, phone }));
   toast(`${name} adicionado(a)`);
+  inp.focus();
 });
 $('#people').addEventListener('click', e => {
   const t = e.target;
   const name = t.closest('.pname');
   if (name){ focusPerson = focusPerson === name.dataset.p ? null : name.dataset.p; return render(); }
   const ed = t.closest('.pedit');
-  if (ed){ const p = person(ed.dataset.p); return promptText('Renomear responsável', p.name, 'Nome', v => { p.name = v; commit(upsert('people', p)); }); }
+  if (ed) return editPerson(person(ed.dataset.p));
   const del = t.closest('.pdel');
   if (del){
     const p = person(del.dataset.p);
@@ -1163,6 +1207,22 @@ $('#people').addEventListener('click', e => {
     commit(remove('people', p.id), orphaned);
   }
 });
+$('#phoneInput').addEventListener('input', e => e.target.setCustomValidity(''));
+function editPerson(p){
+  openDialog(`<div><h3>Editar responsável</h3><p class="sub">O WhatsApp recebe os lembretes às 13h do dia anterior.</p></div>
+    <label class="field">Nome<input type="text" name="name" required value="${esc(p.name)}" autocomplete="off"></label>
+    <label class="field">WhatsApp com DDD<input type="text" name="phone" inputmode="tel" value="${esc(fmtPhone(p.phone))}" placeholder="(11) 98765-4321" autocomplete="off"></label>
+    <div class="actions"><span class="sp"></span><button type="button" class="btn" data-act="cancel">Cancelar</button><button class="btn primary">Salvar</button></div>`,
+    fd => {
+      const name = fd.get('name').trim();
+      const phone = normPhone(fd.get('phone'));
+      const f = dlgForm.querySelector('[name=phone]');
+      if (phone === null){ f.setCustomValidity('Use DDD + número, ex.: (11) 98765-4321'); f.reportValidity(); f.oninput = () => f.setCustomValidity(''); return false; }
+      if (!name) return false;
+      commit(upsert('people', { ...p, name, phone }));
+      toast('Responsável atualizado');
+    });
+}
 $('#people').addEventListener('change', e => {
   const c = e.target.closest('[data-pc]');
   if (c) commit(upsert('people', person(c.dataset.pc)));

@@ -18,6 +18,7 @@ Calendário simples de publicações por canal, com sincronização **ao vivo** 
 |---|---|
 | `index.html` | O site inteiro (HTML + CSS + JS, sem build, sem servidor) |
 | `supabase/schema.sql` | Cria as tabelas `channels`, `people` e `posts`, as permissões e o tempo real |
+| `supabase/whatsapp.sql` | Lembretes no WhatsApp (Z-API): coluna `phone`, agendamento diário às 13h e funções de envio |
 
 O site fala direto com o Supabase usando a chave **publishable** (pública), que fica em `index.html`.
 A chave **secret** não é usada pelo site e **nunca** deve ser colocada no código.
@@ -28,6 +29,26 @@ A chave **secret** não é usada pelo site e **nunca** deve ser colocada no cód
 2. Cole todo o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) e clique em **Run**.
 
 Pronto: as tabelas são criadas, o tempo real é ligado e os canais iniciais são inseridos.
+
+## 1b. Lembretes no WhatsApp (Z-API)
+
+Todo dia às **13h (Brasília)**, cada responsável com WhatsApp cadastrado recebe a lista dos posts dele marcados para o **dia seguinte** que ainda não foram publicados.
+
+1. No SQL Editor do Supabase, rode [`supabase/whatsapp.sql`](supabase/whatsapp.sql).
+2. Na [Z-API](https://z-api.io), crie uma instância e leia o QR Code com o WhatsApp que vai **enviar** as mensagens.
+3. Cadastre as credenciais (Instance ID, Token e o Client-Token da aba Segurança):
+
+```sql
+insert into public.app_settings (key, value) values
+  ('zapi_instance_id',  'SEU_INSTANCE_ID'),
+  ('zapi_token',        'SEU_TOKEN'),
+  ('zapi_client_token', 'SEU_CLIENT_TOKEN')
+on conflict (key) do update set value = excluded.value;
+```
+
+4. No site, cadastre (ou edite no ✎) o WhatsApp de cada responsável com DDD.
+
+Teste: `select public.mkt_whatsapp_send('11987654321', 'Teste ✅');` — e veja a resposta em `select * from net._http_response order by created desc limit 5;`
 
 ## 2. Publicar no Vercel
 
