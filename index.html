@@ -2,180 +2,421 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Calendário de Marketing</title>
-<meta name="description" content="Calendário de publicações de marketing por canal, com sincronização ao vivo.">
-<meta name="theme-color" content="#4f46e5">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
+<meta name="description" content="Calendário de publicações de marketing por canal, com visão de calendário, gráficos e sincronização ao vivo.">
+<meta name="theme-color" content="#2563EB">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232563EB'/%3E%3Crect x='8' y='9' width='16' height='15' rx='3' fill='none' stroke='white' stroke-width='2'/%3E%3Cpath d='M8 14h16M12 6.5v4M20 6.5v4' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  .live{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#047857;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:20px;padding:3px 10px}
-  .live::before{content:"";width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.2)}
-  .live.off{color:#b45309;background:#fffbeb;border-color:#fde68a}
-  .live.off::before{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.2)}
-  .live.load{color:var(--muted);background:#f3f4f8;border-color:var(--line)}
-  .live.load::before{background:#9aa3b2;box-shadow:none}
   :root{
-    --bg:#f4f5f8; --panel:#fff; --line:#e6e8ee; --week:#b9bfd3; --text:#1d2433; --muted:#6b7385;
-    --accent:#4f46e5; --accent-soft:#eef0ff; --today:#fffaeb; --weekend:#f9fafb;
-    --ch-w:190px; --day-w:136px; --wk-h:32px;
+    /* Surfaces & ink (white + blue) */
+    --bg:#F8FAFC; --surface:#FFFFFF; --sunken:#F1F5F9;
+    --ink:#0F172A; --ink-2:#334155; --muted:#64748B;
+    --line:#E2E8F0; --line-2:#CBD5E1;
+    --blue:#2563EB; --blue-700:#1D4ED8; --blue-50:#EFF6FF; --blue-100:#DBEAFE; --blue-200:#BFDBFE;
+    --week:#BFDBFE; --today-bg:#F5F9FF; --weekend:#FAFBFD;
+    /* Chart series (validated: CVD ΔE 21.8, labels + table as contrast relief) */
+    --s-pub:#1D4ED8; --s-pen:#60A5FA;
+    --danger:#DC2626;
+    /* Motion */
+    --ease-out:cubic-bezier(0.23,1,0.32,1);
+    --ease-io:cubic-bezier(0.77,0,0.175,1);
+    /* Shape */
+    --r-lg:14px; --r-md:10px; --r-sm:8px;
+    --shadow-sm:0 1px 2px rgba(15,23,42,.06);
+    --shadow-md:0 4px 14px rgba(15,23,42,.08);
+    --ch-w:196px; --day-w:140px; --wk-h:34px;
   }
   *{box-sizing:border-box}
-  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
-  button{font:inherit;cursor:pointer}
-  input,select{font:inherit}
+  html,body{margin:0}
+  body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;font-feature-settings:"cv11","ss01"}
+  button{font:inherit;color:inherit;cursor:pointer}
+  input,select{font:inherit;color:inherit}
+  .ic{width:16px;height:16px;flex:none;display:block}
+  :focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:6px}
+  [hidden]{display:none !important}
 
-  /* Top bar */
-  .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 22px;background:var(--panel);border-bottom:1px solid var(--line)}
-  .top h1{font-size:18px;margin:0 10px 0 0;font-weight:700}
-  .nav{display:flex;align-items:center;gap:6px}
-  .nav .month{min-width:160px;text-align:center;font-weight:600;font-size:16px}
-  .icon-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:#fff;font-size:18px;line-height:1;color:var(--text)}
-  .icon-btn:hover{background:var(--accent-soft);border-color:#c9ccf5}
-  .btn{padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--text)}
-  .btn:hover{background:#f3f4f8}
-  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-  .btn.primary:hover{background:#4338ca}
-  .btn.danger{color:#dc2626;border-color:#f5c2c2}
-  .btn.danger:hover{background:#fef2f2}
-  .stats{color:var(--muted);font-size:13px}
-  .sp{flex:1}
-  .tiny{font-size:12px;padding:6px 10px}
+  /* ---------- Buttons ---------- */
+  .btn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface);font-weight:500;color:var(--ink-2);white-space:nowrap;
+       transition:transform 160ms var(--ease-out), background-color 140ms ease, border-color 140ms ease, color 140ms ease}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn.danger{color:var(--danger);border-color:#FECACA}
+  .icon-btn{width:36px;height:36px;display:inline-grid;place-items:center;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface);color:var(--ink-2);padding:0;
+       transition:transform 160ms var(--ease-out), background-color 140ms ease, border-color 140ms ease, color 140ms ease}
+  .icon-btn:active{transform:scale(.95)}
+  @media (hover:hover) and (pointer:fine){
+    .btn:hover,.icon-btn:hover{background:var(--sunken);border-color:var(--line-2);color:var(--ink)}
+    .btn.primary:hover{background:var(--blue-700);border-color:var(--blue-700);color:#fff}
+    .btn.danger:hover{background:#FEF2F2;border-color:#FCA5A5;color:var(--danger)}
+  }
 
-  main{padding:18px 22px 40px;display:flex;flex-direction:column;gap:18px}
-  .hint-bar{color:var(--muted);font-size:12.5px;margin:-6px 2px 0}
+  /* ---------- Header ---------- */
+  .top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:40}
+  .top-row{display:flex;align-items:center;gap:16px;padding:12px 24px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px;min-width:0}
+  .logo{width:36px;height:36px;border-radius:10px;background:var(--blue);color:#fff;display:grid;place-items:center;flex:none}
+  .logo .ic{width:20px;height:20px}
+  .brand h1{font-size:16px;font-weight:600;margin:0;letter-spacing:-.01em;white-space:nowrap}
+  .live{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:#047857}
+  .live::before{content:"";width:7px;height:7px;border-radius:50%;background:#10B981}
+  .live.off{color:#B45309}.live.off::before{background:#F59E0B}
+  .live.load{color:var(--muted)}.live.load::before{background:var(--line-2)}
 
-  /* Calendar */
-  .scroller{overflow:auto;max-height:calc(100vh - 210px);min-height:320px;background:#fff;border:1px solid var(--line);border-radius:12px;cursor:grab;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .tabs{position:relative;display:inline-flex;background:var(--sunken);border-radius:11px;padding:4px;margin:0 auto}
+  .tab{position:relative;z-index:1;display:inline-flex;white-space:nowrap;align-items:center;gap:7px;height:34px;padding:0 14px;border:0;background:none;border-radius:8px;font-weight:500;color:var(--muted);transition:color 160ms ease}
+  .tab[aria-selected="true"]{color:var(--blue-700)}
+  @media (hover:hover) and (pointer:fine){ .tab:hover{color:var(--ink)} .tab[aria-selected="true"]:hover{color:var(--blue-700)} }
+  .tab-ind{position:absolute;top:4px;left:0;height:34px;background:var(--surface);border-radius:8px;box-shadow:0 1px 3px rgba(15,23,42,.1),0 0 0 1px rgba(15,23,42,.04)}
+  .tab-ind.ready{transition:transform 240ms var(--ease-io), width 240ms var(--ease-io)}
+  .top-actions{display:flex;gap:8px}
+
+  /* ---------- Toolbar ---------- */
+  main{padding:20px 24px 48px;display:flex;flex-direction:column;gap:16px;max-width:1600px;margin:0 auto}
+  .toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .month-nav{display:flex;align-items:center;gap:6px}
+  .month-nav h2{font-size:20px;font-weight:600;letter-spacing:-.02em;margin:0 6px;min-width:178px;text-align:center}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+  .chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+  .chip b{color:var(--ink);font-weight:600}
+  .chip.focus{background:var(--blue-50);border-color:var(--blue-200);color:var(--blue-700)}
+  .chip.focus button{border:0;background:none;padding:0;display:grid;place-items:center;color:inherit;width:18px;height:18px;border-radius:50%}
+  .chip.focus button:hover{background:var(--blue-100)}
+
+  /* ---------- Views ---------- */
+  .view.entering{animation:viewIn 220ms var(--ease-out)}
+  @keyframes viewIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-sm)}
+
+  /* ---------- Timeline (channels × days) ---------- */
+  .scroller{overflow:auto;max-height:calc(100vh - 250px);min-height:340px;cursor:grab;border-radius:var(--r-lg)}
   .scroller.panning{cursor:grabbing}
   .grid{display:grid;width:max-content;user-select:none}
-
-  .corner{position:sticky;left:0;top:0;z-index:6;background:#fff;border-right:2px solid var(--line);border-bottom:1px solid var(--line);display:flex;align-items:flex-end;padding:10px 14px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-  .wk{position:sticky;top:0;z-index:3;height:var(--wk-h);background:#f1f2f7;border-bottom:1px solid var(--line);border-left:1px solid var(--line);padding:0 10px;display:flex;align-items:center;gap:8px;font-size:12px;white-space:nowrap}
-  .wk .lbl{position:sticky;left:calc(var(--ch-w) + 10px);display:flex;gap:8px}
-  .wk b{color:var(--accent)}
+  .corner{position:sticky;left:0;top:0;z-index:6;background:var(--surface);border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;align-items:flex-end;padding:10px 16px;font-size:13px;font-weight:500;color:var(--muted)}
+  .wk{position:sticky;top:0;z-index:3;height:var(--wk-h);background:#F8FBFF;border-bottom:1px solid var(--line);border-left:1px solid var(--line);display:flex;align-items:center;white-space:nowrap}
+  .wk .lbl{position:sticky;left:calc(var(--ch-w) + 12px);display:flex;gap:8px;align-items:baseline;padding:0 12px;font-size:13px}
+  .wk b{color:var(--blue-700);font-weight:600}
   .wk span{color:var(--muted)}
-  .dh{position:sticky;top:var(--wk-h);z-index:3;background:#fff;border-left:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px 10px;display:flex;align-items:baseline;gap:6px}
-  .dh .wdn{font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.04em}
-  .dh .dn{font-size:18px;font-weight:600}
+  .dh{position:sticky;top:var(--wk-h);z-index:3;background:var(--surface);border-left:1px solid var(--line);border-bottom:1px solid var(--line);padding:8px 12px;display:flex;align-items:center;gap:8px}
+  .dh .wdn{font-size:12px;color:var(--muted);font-weight:500}
+  .dh .dn{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;min-width:28px;height:28px;display:grid;place-items:center;border-radius:8px}
   .dh.we{background:var(--weekend)}
-  .dh.today{background:var(--accent);color:#fff}
-  .dh.today .wdn{color:#dfe0ff}
+  .dh.today .dn{background:var(--blue);color:#fff}
+  .dh.today .wdn{color:var(--blue-700)}
 
-  .ch{position:sticky;left:0;z-index:4;background:#fff;border-right:2px solid var(--line);border-bottom:1px solid var(--line);padding:10px 8px 10px 14px;display:flex;align-items:flex-start;gap:6px}
-  .ch-name{font-weight:600;flex:1;cursor:text;border-radius:5px;padding:2px 4px;margin:-2px -4px;word-break:break-word}
-  .ch-name:hover{background:#f3f4f8}
-  .ch-count{font-size:11px;color:var(--muted);background:#f1f2f7;border-radius:10px;padding:2px 7px;margin-top:1px}
-  .ch-tools{display:flex;flex-direction:column;gap:2px;opacity:0;transition:opacity .15s}
-  .ch:hover .ch-tools{opacity:1}
-  .ch-tools button{border:0;background:none;color:var(--muted);width:20px;height:18px;border-radius:4px;font-size:12px;line-height:1;padding:0}
-  .ch-tools button:hover{background:#f1f2f7;color:var(--text)}
-  .ch-tools .ch-del:hover{background:#fee2e2;color:#dc2626}
+  .ch{position:sticky;left:0;z-index:4;background:var(--surface);border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 8px 12px 16px;display:flex;align-items:flex-start;gap:6px}
+  .ch-name{font-weight:600;flex:1;min-width:0;cursor:text;border-radius:6px;padding:2px 6px;margin:-2px -6px;overflow-wrap:anywhere;transition:background-color 140ms ease}
+  .ch-count{font-size:12px;color:var(--blue-700);background:var(--blue-50);border-radius:999px;padding:1px 8px;margin-top:1px;font-weight:500;font-variant-numeric:tabular-nums}
+  .ch-tools{display:flex;flex-direction:column;gap:2px;opacity:0;transition:opacity 140ms ease}
+  .ch:hover .ch-tools,.ch:focus-within .ch-tools{opacity:1}
+  .ch-tools button{border:0;background:none;color:var(--muted);width:22px;height:20px;border-radius:5px;padding:0;display:grid;place-items:center}
+  .ch-tools .ic{width:14px;height:14px}
+  @media (hover:hover) and (pointer:fine){
+    .ch-name:hover{background:var(--sunken)}
+    .ch-tools button:hover{background:var(--sunken);color:var(--ink)}
+    .ch-tools .ch-del:hover{background:#FEE2E2;color:var(--danger)}
+  }
+  @media (hover:none){ .ch-tools{opacity:1} }
   .ch-add{align-items:center}
-  .ch-add input{width:100%;border:1px dashed #c9cdd8;border-radius:8px;padding:7px 10px;background:#fafbfc}
-  .ch-add input:focus{outline:none;border-color:var(--accent);border-style:solid;background:#fff}
-  .filler{border-bottom:1px solid var(--line);background:#fcfcfd}
+  .ch-add form{width:100%}
+  .ch-add input{width:100%;height:36px;border:1px dashed var(--line-2);border-radius:var(--r-sm);padding:0 12px;background:var(--bg);transition:border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease}
+  .ch-add input:focus{outline:none;border-style:solid;border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px var(--blue-100)}
+  .filler{border-bottom:1px solid var(--line)}
 
-  .cell{min-height:84px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px;display:flex;flex-direction:column;gap:5px;transition:background .1s}
+  .cell{min-height:92px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px;display:flex;flex-direction:column;gap:6px;transition:background-color 120ms ease, box-shadow 120ms ease}
   .cell.we{background:var(--weekend)}
-  .cell.today{background:var(--today)}
-  .cell.over{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)}
-  .wk-start{border-left:3px solid var(--week) !important}
+  .cell.today{background:var(--today-bg)}
+  .wk-start{border-left:2px solid var(--week) !important}
+  .over{background:var(--blue-50) !important;box-shadow:inset 0 0 0 2px var(--blue)}
 
-  .add{margin-top:auto;border:1px dashed transparent;background:none;border-radius:7px;color:#b4b9c6;font-size:18px;line-height:1;padding:4px 0;cursor:pointer}
-  .cell:hover .add{border-color:#c9cdd8;color:var(--accent)}
-  .add:hover{background:var(--accent-soft)!important;border-color:var(--accent)!important}
+  .add{margin-top:auto;height:28px;border:1px dashed transparent;background:none;border-radius:7px;color:var(--line-2);display:grid;place-items:center;padding:0;
+       transition:color 140ms ease, border-color 140ms ease, background-color 140ms ease, transform 160ms var(--ease-out)}
+  .add:active{transform:scale(.96)}
+  @media (hover:hover) and (pointer:fine){
+    .cell:hover .add,.mday:hover .add{color:var(--blue);border-color:var(--blue-200)}
+    .add:hover{background:var(--blue-50) !important;border-color:var(--blue) !important}
+  }
+  @media (hover:none){ .add{color:var(--blue);border-color:var(--blue-200)} }
 
-  .post{--c:#64748b;position:relative;background:color-mix(in srgb,var(--c) 13%,#fff);border-left:4px solid var(--c);border-radius:7px;padding:6px 24px 6px 8px;cursor:grab;font-size:12.5px;line-height:1.25;box-shadow:0 1px 1px rgba(16,24,40,.05)}
-  .post:hover{box-shadow:0 2px 6px rgba(16,24,40,.12)}
-  .post .t{font-weight:600;word-break:break-word}
-  .post .p{font-size:11px;color:#555d70;margin-top:2px;display:flex;align-items:center;gap:4px}
-  .post .chk{position:absolute;top:6px;right:6px;width:15px;height:15px;border-radius:50%;border:1.5px solid #b7bccb;background:#fff;font-size:9px;line-height:1;color:transparent;padding:0;display:grid;place-items:center}
-  .post .chk:hover{border-color:#10b981}
-  .post.done .chk{background:#10b981;border-color:#10b981;color:#fff}
-  .post.done .t{color:#3d4456}
-  .post.dragging{opacity:.4}
-  .post.dim{opacity:.25}
+  /* ---------- Post card ---------- */
+  .post{--c:#94A3B8;position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:7px 30px 7px 12px;cursor:grab;
+        box-shadow:var(--shadow-sm);transition:transform 160ms var(--ease-out), box-shadow 160ms ease, border-color 140ms ease, opacity 160ms ease}
+  .post::before{content:"";position:absolute;left:4px;top:7px;bottom:7px;width:3px;border-radius:3px;background:var(--c)}
+  .post .t{font-size:13px;font-weight:600;line-height:1.3;overflow-wrap:break-word;hyphens:auto}
+  .post .m{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .post.done .t{color:var(--ink-2)}
+  .post .chk{position:absolute;top:7px;right:7px;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line-2);background:var(--surface);padding:0;display:grid;place-items:center;color:transparent;
+        transition:background-color 160ms ease, border-color 160ms ease, transform 160ms var(--ease-out)}
+  .post .chk .ic{width:12px;height:12px;stroke-width:3}
+  .post .chk:active{transform:scale(.9)}
+  .post.done .chk{background:var(--blue);border-color:var(--blue);color:#fff}
+  .post.ticked .chk .ic path{stroke-dasharray:24;animation:tick 260ms var(--ease-out)}
+  @keyframes tick{from{stroke-dashoffset:24}to{stroke-dashoffset:0}}
+  .post.dragging{opacity:.35}
+  .post.dim{opacity:.28}
+  .post.enter{animation:postIn 260ms var(--ease-out)}
+  @keyframes postIn{from{opacity:0;transform:translateY(4px) scale(.98)}to{opacity:1;transform:none}}
+  @media (hover:hover) and (pointer:fine){
+    .post:hover{transform:translateY(-1px);box-shadow:var(--shadow-md);border-color:var(--line-2)}
+    .post .chk:hover{border-color:var(--blue)}
+  }
+  .post.compact{padding:6px 28px 6px 11px}
+  .post.compact .t{font-size:12.5px}
 
-  /* People */
-  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
-  .card-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-  .card-h h2{font-size:16px;margin:0}
+  .hint-bar{color:var(--muted);font-size:12.5px;display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;padding:0 4px}
+  .hint-bar span{display:inline-flex;align-items:center;gap:6px}
+  kbd{font:inherit;font-size:11.5px;font-weight:600;border:1px solid var(--line-2);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:#fff;color:var(--ink-2)}
+
+  /* ---------- Month calendar ---------- */
+  .month-wrap{overflow-x:auto;border-radius:var(--r-lg)}
+  .mgrid{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));min-width:910px}
+  .mhead{padding:10px 12px;font-size:13px;font-weight:500;color:var(--muted);border-bottom:1px solid var(--line);background:var(--surface)}
+  .mday{min-height:132px;padding:8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px;background:var(--surface);transition:background-color 120ms ease, box-shadow 120ms ease}
+  .mgrid > .mday:nth-child(7n){border-right:0}
+  .mday.we{background:var(--weekend)}
+  .mday.out{background:var(--bg)}
+  .mday.out .dnum{color:var(--line-2)}
+  .mday.today{background:var(--today-bg)}
+  .mday-h{display:flex;align-items:center;justify-content:space-between}
+  .dnum{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;min-width:26px;height:26px;display:grid;place-items:center;border-radius:8px;color:var(--ink-2)}
+  .mday.today .dnum{background:var(--blue);color:#fff}
+  .mday .add{margin:0;width:26px;height:26px}
+  .mposts{display:flex;flex-direction:column;gap:5px}
+
+  /* ---------- Charts ---------- */
+  .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+  .tile{padding:16px 18px}
+  .tile .lbl{font-size:13px;color:var(--muted);font-weight:500}
+  .tile .num{font-size:32px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:4px;line-height:1.1}
+  .tile .sub{font-size:13px;color:var(--muted);margin-top:4px}
+  .tile.accent{background:var(--blue);border-color:var(--blue);color:#fff}
+  .tile.accent .lbl,.tile.accent .sub{color:#DBEAFE}
+  .legend{display:flex;gap:18px;align-items:center;font-size:13px;color:var(--ink-2);padding:2px 4px}
+  .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  .sw.pub{background:var(--s-pub)} .sw.pen{background:var(--s-pen)}
+  .charts-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .chart{padding:18px 20px}
+  .chart.wide{grid-column:1 / -1}
+  .chart header{display:flex;align-items:baseline;justify-content:space-between;gap:4px 12px;margin-bottom:14px;flex-wrap:wrap}
+  .chart h3{font-size:15px;font-weight:600;margin:0}
+  .chart header p{margin:0;font-size:13px;color:var(--muted)}
+  .hbars{display:flex;flex-direction:column;gap:2px}
+  .hrow{display:grid;grid-template-columns:minmax(90px,150px) 1fr;align-items:center;gap:12px;padding:6px 6px;border-radius:8px;transition:background-color 120ms ease}
+  .hrow:hover{background:var(--bg)}
+  .hlabel{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);min-width:0}
+  .hlabel span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .htrack{display:flex;align-items:center;height:16px}
+  .hbar{display:flex;height:14px;width:calc(100% - 40px);align-items:stretch}
+  .hbar .seg{display:block;height:100%}
+  .hbar .seg.pub{background:var(--s-pub)}
+  .hbar .seg.pen{background:var(--s-pen)}
+  .hbar .seg.pub + .seg.pen{margin-left:2px}
+  .hbar .seg.end{border-radius:0 4px 4px 0}
+  .hval{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);margin-left:8px}
+  .hzero{width:2px;height:14px;background:var(--line-2);border-radius:1px}
+
+  .cols-wrap{position:relative;padding-left:28px}
+  .cols{position:relative;height:180px;display:flex;align-items:flex-end;gap:3px;border-bottom:1px solid var(--line-2)}
+  .gridline{position:absolute;left:0;right:0;border-top:1px dashed var(--line);pointer-events:none}
+  .gridline span{position:absolute;left:-28px;top:-8px;width:22px;text-align:right;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .col{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;border-radius:4px 4px 0 0;position:relative;transition:background-color 120ms ease}
+  .col:hover{background:var(--bg)}
+  .col .stack{width:min(70%,18px);display:flex;flex-direction:column;justify-content:flex-end;height:100%}
+  .col .seg{display:block;width:100%}
+  .col .seg.pub{background:var(--s-pub)} .col .seg.pen{background:var(--s-pen)}
+  .col .seg.pen + .seg.pub{margin-top:2px}
+  .col .seg.top{border-radius:4px 4px 0 0}
+  .col.wkstart::before{content:"";position:absolute;left:-2px;top:0;bottom:0;border-left:1px solid var(--line)}
+  .xlabels{display:flex;gap:3px;margin-top:6px}
+  .xlabels span{flex:1;text-align:center;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .xlabels span.today{color:var(--blue-700);font-weight:600}
+  details.tbl{margin-top:12px;font-size:13px}
+  details.tbl summary{cursor:pointer;color:var(--blue-700);font-weight:500;width:max-content;border-radius:6px;list-style-position:inside}
+  details.tbl table{width:100%;border-collapse:collapse;margin-top:8px;font-variant-numeric:tabular-nums}
+  details.tbl th,details.tbl td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+  details.tbl th{font-weight:500;color:var(--muted)}
+  details.tbl td:not(:first-child),details.tbl th:not(:first-child){text-align:right}
+  .empty-state{padding:48px 24px;text-align:center;color:var(--muted)}
+  .empty-state .ic{width:40px;height:40px;margin:0 auto 12px;color:var(--blue-200)}
+  .empty-state h3{color:var(--ink);font-size:16px;margin:0 0 4px}
+  .empty-state p{margin:0 0 16px}
+  .tip{position:fixed;z-index:80;pointer-events:none;background:var(--ink);color:#fff;border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.5;box-shadow:0 8px 24px rgba(15,23,42,.2);
+       opacity:0;transform:translateY(4px);transition:opacity 120ms ease, transform 120ms var(--ease-out);min-width:150px}
+  .tip.show{opacity:1;transform:none}
+  .tip b.h{display:block;font-weight:600;margin-bottom:4px}
+  .tip .r{display:flex;justify-content:space-between;gap:16px}
+  .tip .r b{font-variant-numeric:tabular-nums}
+
+  /* ---------- People ---------- */
+  .people-card{padding:20px}
+  .sec-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .sec-h h2{font-size:16px;font-weight:600;margin:0}
   .muted{color:var(--muted);font-size:13px}
-  .add-person{display:flex;gap:8px;margin-bottom:14px;max-width:460px}
-  .add-person input{flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 11px}
-  .add-person input:focus{outline:none;border-color:var(--accent)}
+  .add-person{display:flex;gap:8px;margin-bottom:16px;max-width:480px}
+  .add-person input{flex:1;min-width:0;height:38px;border:1px solid var(--line);border-radius:var(--r-sm);padding:0 12px;background:#fff;transition:border-color 140ms ease, box-shadow 140ms ease}
+  .add-person input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-100)}
+  .add-person .btn{height:38px}
   .people{display:flex;flex-wrap:wrap;gap:10px}
-  .person{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:7px 8px 7px 10px;background:#fff;transition:all .12s}
-  .person.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
-  .person input[type=color]{width:20px;height:20px;border:0;padding:0;border-radius:50%;background:none;cursor:pointer}
+  .person{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 10px;background:#fff;transition:border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease}
+  .person.active{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-100);background:var(--blue-50)}
+  .person input[type=color]{width:22px;height:22px;border:0;padding:0;border-radius:50%;background:none;cursor:pointer}
   .person input[type=color]::-webkit-color-swatch-wrapper{padding:0}
   .person input[type=color]::-webkit-color-swatch{border:0;border-radius:50%}
   .person input[type=color]::-moz-color-swatch{border:0;border-radius:50%}
-  .pname{font-weight:600;cursor:pointer}
-  .pcount{font-size:12px;color:var(--muted)}
-  .person button{border:0;background:none;color:var(--muted);border-radius:5px;width:22px;height:22px;padding:0}
-  .person button:hover{background:#f1f2f7;color:var(--text)}
-  .person .pdel:hover{background:#fee2e2;color:#dc2626}
-  .empty{color:var(--muted);font-size:13px;padding:6px 0}
+  .pname{font-weight:600;cursor:pointer;border:0;background:none;padding:0}
+  .pcount{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .person .tools{display:flex}
+  .person .tools button{border:0;background:none;color:var(--muted);border-radius:6px;width:26px;height:26px;padding:0;display:grid;place-items:center}
+  .person .tools .ic{width:14px;height:14px}
+  @media (hover:hover) and (pointer:fine){
+    .person:hover{border-color:var(--line-2)}
+    .person .tools button:hover{background:var(--sunken);color:var(--ink)}
+    .person .tools .pdel:hover{background:#FEE2E2;color:var(--danger)}
+  }
+  .empty{color:var(--muted);font-size:13px;padding:4px 0}
 
-  /* Dialog */
-  dialog{border:0;border-radius:14px;padding:0;width:min(440px,92vw);box-shadow:0 20px 50px rgba(16,24,40,.25)}
-  dialog::backdrop{background:rgba(20,24,40,.35)}
-  dialog form{padding:20px 22px;display:flex;flex-direction:column;gap:12px}
-  dialog h3{margin:0;font-size:17px}
-  dialog .sub{margin:-8px 0 2px;color:var(--muted);font-size:13px}
-  dialog label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600;color:#3d4456}
-  dialog label.row{flex-direction:row;align-items:center;gap:8px;font-weight:500}
-  dialog input[type=text],dialog select{border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-weight:400;color:var(--text);background:#fff}
-  dialog input[type=text]:focus,dialog select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-  dialog .hint{margin:0;font-size:12.5px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 10px}
-  dialog .actions{display:flex;gap:8px;margin-top:6px}
+  /* ---------- Dialog ---------- */
+  dialog{border:0;border-radius:16px;padding:0;width:min(460px,calc(100vw - 32px));box-shadow:0 24px 60px rgba(15,23,42,.22);color:var(--ink);
+         opacity:1;transform:none;transition:opacity 200ms var(--ease-out), transform 200ms var(--ease-out), overlay 200ms allow-discrete, display 200ms allow-discrete}
+  dialog:not([open]){opacity:0;transform:scale(.98);transition-duration:140ms}
+  @starting-style{ dialog[open]{opacity:0;transform:scale(.96) translateY(6px)} }
+  dialog::backdrop{background:rgba(15,23,42,0);transition:background-color 200ms ease, overlay 200ms allow-discrete, display 200ms allow-discrete}
+  dialog[open]::backdrop{background:rgba(15,23,42,.38)}
+  @starting-style{ dialog[open]::backdrop{background:rgba(15,23,42,0)} }
+  dialog form{padding:22px 24px;display:flex;flex-direction:column;gap:14px}
+  dialog h3{margin:0;font-size:17px;font-weight:600;letter-spacing:-.01em}
+  dialog .sub{margin:2px 0 0;color:var(--muted);font-size:13px}
+  .field{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:var(--ink-2);min-width:0}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .check-row{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-2);cursor:pointer}
+  .check-row input{width:16px;height:16px;accent-color:var(--blue)}
+  dialog input[type=text],dialog input[type=date],dialog select{height:40px;border:1px solid var(--line);border-radius:var(--r-sm);padding:0 12px;font-weight:400;color:var(--ink);background:#fff;font-size:14px;transition:border-color 140ms ease, box-shadow 140ms ease;width:100%}
+  dialog input:focus,dialog select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-100)}
+  dialog .hint{margin:0;font-size:13px;color:#1E40AF;background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--r-sm);padding:10px 12px}
+  dialog .actions{display:flex;gap:8px;margin-top:4px}
+  .sp{flex:1}
 
-  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:#1d2433;color:#fff;padding:9px 16px;border-radius:9px;font-size:13px;opacity:0;pointer-events:none;transition:all .2s;z-index:100}
-  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* ---------- Toast ---------- */
+  .toast{position:fixed;bottom:24px;left:50%;z-index:100;display:flex;align-items:center;gap:8px;background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:13.5px;box-shadow:0 10px 30px rgba(15,23,42,.25);
+         opacity:0;transform:translate(-50%,8px);pointer-events:none;transition:opacity 150ms ease, transform 150ms var(--ease-out)}
+  .toast.show{opacity:1;transform:translate(-50%,0);transition-duration:220ms}
+  .toast .ic{color:#93C5FD}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 1100px){ .tiles{grid-template-columns:repeat(2,minmax(0,1fr))} .charts-grid{grid-template-columns:1fr} }
+  @media (max-width: 860px){
+    .top-row{padding:10px 16px;gap:10px}
+    .tabs{order:3;width:100%;margin:0}
+    .tab{flex:1;justify-content:center;padding:0 8px}
+    .top-actions{margin-left:auto}
+    .top-actions .btn span{display:none}
+    .top-actions .btn{width:36px;padding:0;justify-content:center}
+    main{padding:14px 12px 40px}
+    .month-nav h2{font-size:18px;min-width:150px}
+    .chips{margin-left:0}
+    :root{--ch-w:128px;--day-w:128px}
+    .tab{font-size:13px;padding:0 6px;gap:6px}
+    .ch{flex-wrap:wrap;align-content:flex-start;align-items:center;padding:10px 8px 10px 12px;row-gap:6px}
+    .ch-name{flex-basis:100%}
+    .ch-tools{flex-direction:row;opacity:1;order:3}
+    .ch-tools button{width:26px;height:24px}
+    .scroller{max-height:calc(100vh - 290px)}
+    .hint-bar{display:none}
+  }
+  @media (max-width: 520px){ .tiles{grid-template-columns:1fr 1fr;gap:10px} .tile .num{font-size:26px} .tab .ic{display:none} .row2{grid-template-columns:1fr} }
+
+  /* ---------- Reduced motion: keep fades, drop movement ---------- */
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{transition-property:opacity,background-color,border-color,color,box-shadow !important}
+    .view.entering,.post.enter{animation:fadeOnly 160ms ease}
+    .post.ticked .chk .ic path{animation:none}
+    .btn:active,.icon-btn:active,.add:active,.post .chk:active{transform:none}
+    @media (hover:hover){ .post:hover{transform:none} }
+    dialog,dialog:not([open]){transform:none}
+    @starting-style{ dialog[open]{transform:none} }
+    .toast,.toast.show{transform:translate(-50%,0)}
+  }
+  @keyframes fadeOnly{from{opacity:0}to{opacity:1}}
 </style>
 </head>
 <body>
 
-<div class="top">
-  <h1>📅 Calendário de Marketing</h1>
-  <div class="nav">
-    <button class="icon-btn" id="prev" title="Mês anterior">‹</button>
-    <div class="month" id="monthLabel"></div>
-    <button class="icon-btn" id="next" title="Próximo mês">›</button>
-    <button class="btn tiny" id="todayBtn">Hoje</button>
+<header class="top">
+  <div class="top-row">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
+      <div>
+        <h1>Calendário de Marketing</h1>
+        <span class="live load" id="live" title="Mudanças feitas em qualquer dispositivo aparecem aqui automaticamente">Conectando…</span>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Visões" id="tabs">
+      <span class="tab-ind" id="tabInd" aria-hidden="true"></span>
+      <button class="tab" role="tab" data-view="timeline" aria-selected="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h13"/></svg>Linha do tempo</button>
+      <button class="tab" role="tab" data-view="calendar" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>Calendário</button>
+      <button class="tab" role="tab" data-view="charts" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M7 16v-5M12 16V6M17 16v-8"/></svg>Gráficos</button>
+    </nav>
+    <div class="top-actions">
+      <button class="btn" id="exportBtn" title="Baixar um backup dos dados"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span>Exportar</span></button>
+      <button class="btn" id="importBtn" title="Restaurar um backup"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg><span>Importar</span></button>
+      <input type="file" id="importFile" accept="application/json" hidden>
+    </div>
   </div>
-  <span class="stats" id="stats"></span>
-  <span class="live load" id="live" title="Mudanças feitas em qualquer dispositivo aparecem aqui automaticamente">Conectando…</span>
-  <span class="sp"></span>
-  <button class="btn tiny" id="exportBtn" title="Baixar um backup dos dados">Exportar backup</button>
-  <button class="btn tiny" id="importBtn" title="Restaurar um backup">Importar</button>
-  <input type="file" id="importFile" accept="application/json" hidden>
-</div>
+</header>
 
 <main>
-  <div class="scroller" id="scroller"><div class="grid" id="grid"></div></div>
-  <div class="hint-bar">Dica: clique e arraste o fundo do calendário para rolar para os lados · arraste um post para mudar de dia ou de canal (segure <b>Ctrl</b> ao soltar para duplicar) · clique no nome do canal para renomear · clique no ✓ para marcar como publicado.</div>
+  <section class="toolbar">
+    <div class="month-nav">
+      <button class="icon-btn" id="prev" aria-label="Mês anterior"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <h2 id="monthLabel"></h2>
+      <button class="icon-btn" id="next" aria-label="Próximo mês"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+      <button class="btn" id="todayBtn">Hoje</button>
+    </div>
+    <div class="chips" id="chips"></div>
+  </section>
 
-  <section class="card">
-    <div class="card-h">
+  <section class="view" data-view="timeline" id="view-timeline">
+    <div class="card scroller" id="scroller"><div class="grid" id="grid"></div></div>
+    <div class="hint-bar">
+      <span>Arraste o fundo para rolar para os lados</span>
+      <span>Arraste um post para mudar de dia ou canal</span>
+      <span><kbd>Ctrl</kbd> ao soltar duplica</span>
+      <span>Clique no nome do canal para renomear</span>
+    </div>
+  </section>
+
+  <section class="view" data-view="calendar" id="view-calendar" hidden>
+    <div class="card month-wrap"><div id="month"></div></div>
+  </section>
+
+  <section class="view" data-view="charts" id="view-charts" hidden>
+    <div id="charts"></div>
+  </section>
+
+  <section class="card people-card" id="peopleCard">
+    <div class="sec-h">
       <h2>Responsáveis</h2>
-      <span class="muted">Cadastre aqui quem cuida dos posts. Clique em um nome para destacar só os posts dessa pessoa.</span>
+      <span class="muted">Cadastre quem cuida dos posts. Clique em um nome para destacar só os posts dessa pessoa.</span>
     </div>
     <form class="add-person" id="addPerson">
-      <input id="personInput" placeholder="Nome do responsável" required autocomplete="off">
-      <button class="btn primary">Adicionar</button>
+      <input id="personInput" placeholder="Nome do responsável" aria-label="Nome do responsável" required autocomplete="off">
+      <button class="btn primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Adicionar</button>
     </form>
     <div class="people" id="people"></div>
   </section>
 </main>
 
 <dialog id="dlg"><form id="dlgForm" method="dialog"></form></dialog>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="tip" id="tip" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const COLORS = ['#4f46e5','#0ea5e9','#10b981','#f59e0b','#ef4444','#ec4899','#8b5cf6','#14b8a6','#f97316','#64748b'];
+const COLORS = ['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#e34948'];
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const MONTHS_S = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const WD = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
@@ -184,6 +425,18 @@ const WD_L = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
 const $ = s => document.querySelector(s);
 const grid = $('#grid'), scroller = $('#scroller'), dlg = $('#dlg'), dlgForm = $('#dlgForm');
 
+const svg = d => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const ICON = {
+  plus: svg('<path d="M12 5v14M5 12h14"/>'),
+  check: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+  up: svg('<path d="M18 15l-6-6-6 6"/>'),
+  down: svg('<path d="M6 9l6 6 6-6"/>'),
+  x: svg('<path d="M18 6L6 18M6 6l12 12"/>'),
+  pencil: svg('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/>'),
+  chart: svg('<path d="M3 20h18M7 16v-5M12 16V6M17 16v-8"/>'),
+  info: svg('<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>'),
+};
+
 function uid(){ return Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pad = n => String(n).padStart(2,'0');
@@ -191,6 +444,7 @@ const iso = (y,m,d) => `${y}-${pad(m+1)}-${pad(d)}`;
 const parseIso = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
 const fmtDate = s => { const d = parseIso(s); return `${WD_L[d.getDay()]}, ${d.getDate()} de ${MONTHS[d.getMonth()].toLowerCase()}`; };
 const fmtShort = s => { const d = parseIso(s); return `${d.getDate()}/${MONTHS_S[d.getMonth()]}`; };
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 /* ---------------- Sync with Supabase (live) ----------------
    Every change is applied locally right away and saved to Supabase.
@@ -250,7 +504,6 @@ async function flush(){
   const batch = queue.splice(0);
   try {
     if (!sb) throw null;
-    // Only the last operation per item matters
     const last = new Map();
     batch.forEach(op => last.set(op.c + '|' + (op.v ? op.v.id : op.id), op));
     const ops = [...last.values()];
@@ -296,7 +549,6 @@ async function pull(){
   } catch (e) { console.error(e); setOnline(false, explain(e)); }
 }
 
-// Realtime: apply changes made on other devices as they happen
 function onRemoteChange(c, p){
   if (p.eventType === 'DELETE'){
     const id = p.old?.id; if (!id) return;
@@ -317,7 +569,6 @@ function subscribe(){
     else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED'){ channelOk = false; setOnline(false); }
   });
 }
-// Safety net: re-sync when the tab comes back and once a minute
 document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
 setInterval(() => { if (!document.hidden) pull(); }, 60000);
 
@@ -342,7 +593,7 @@ function setOnline(ok, msg){
   el.textContent = text;
 }
 
-// Avoid redrawing while the user is dragging or typing inside the calendar
+// Don't redraw while the user is dragging or typing inside the page
 let pendingRender = false;
 function safeRender(){
   const ae = document.activeElement;
@@ -353,30 +604,70 @@ function safeRender(){
 document.addEventListener('focusout', () => setTimeout(() => { if (pendingRender) safeRender(); }, 0));
 const chans = () => [...state.channels].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
+/* ---------------- View state ---------------- */
 const now = new Date();
 const TODAY = iso(now.getFullYear(), now.getMonth(), now.getDate());
 let view = { y: now.getFullYear(), m: now.getMonth() };
 let focusPerson = null;
+let justAdded = null, justTicked = null;
+
+const HASH = { timeline: 'linha-do-tempo', calendar: 'calendario', charts: 'graficos' };
+let viewMode = (() => {
+  const h = location.hash.slice(1);
+  return Object.keys(HASH).find(k => HASH[k] === h) || localStorage.getItem('mktcal.view') || 'timeline';
+})();
+if (!HASH[viewMode]) viewMode = 'timeline';
 
 const person = id => state.people.find(p => p.id === id);
 const channel = id => state.channels.find(c => c.id === id);
 const monthPrefix = () => `${view.y}-${pad(view.m+1)}-`;
+const daysIn = (y, m) => new Date(y, m+1, 0).getDate();
+const monthPosts = () => state.posts.filter(p => p.date.startsWith(monthPrefix())).sort((a, b) => (a.ts || 0) - (b.ts || 0));
 
 /* ---------------- Render ---------------- */
 function render(){
-  const { y, m } = view;
-  const n = new Date(y, m+1, 0).getDate();
-  const prefix = monthPrefix();
-  const monthPosts = state.posts.filter(p => p.date.startsWith(prefix)).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  renderToolbar();
+  if (viewMode === 'timeline') renderTimeline();
+  else if (viewMode === 'calendar') renderCalendar();
+  else renderCharts();
+  renderPeople();
+  justAdded = null; justTicked = null;
+}
 
-  $('#monthLabel').textContent = `${MONTHS[m]} ${y}`;
-  const done = monthPosts.filter(p => p.done).length;
-  $('#stats').textContent = `${monthPosts.length} post${monthPosts.length===1?'':'s'} no mês · ${done} publicado${done===1?'':'s'}`;
+function renderToolbar(){
+  $('#monthLabel').textContent = `${MONTHS[view.m]} ${view.y}`;
+  const posts = monthPosts();
+  const done = posts.filter(p => p.done).length;
+  const fp = person(focusPerson);
+  $('#chips').innerHTML =
+    (fp ? `<span class="chip focus"><span class="dot" style="background:${fp.color}"></span>Destacando ${esc(fp.name)}<button id="clearFocus" aria-label="Parar de destacar">${ICON.x}</button></span>` : '') +
+    `<span class="chip"><b>${posts.length}</b> ${posts.length === 1 ? 'post' : 'posts'} no mês</span>` +
+    `<span class="chip"><b>${done}</b> ${done === 1 ? 'publicado' : 'publicados'}</span>`;
+}
+
+function postHtml(p, compact){
+  const pe = person(p.personId);
+  const color = pe ? pe.color : '#94A3B8';
+  const cls = ['post', p.done && 'done', compact && 'compact', focusPerson && p.personId !== focusPerson && 'dim',
+               p.id === justAdded && 'enter', p.id === justTicked && p.done && 'ticked'].filter(Boolean).join(' ');
+  const meta = compact
+    ? esc(channel(p.channelId)?.name || '') + (pe ? ' · ' + esc(pe.name) : '')
+    : (pe ? esc(pe.name) : 'Sem responsável');
+  return `<div class="${cls}" draggable="true" data-id="${p.id}" style="--c:${color}" title="Clique para editar · arraste para mover">
+    <button class="chk" aria-label="${p.done ? 'Desmarcar publicado' : 'Marcar como publicado'}" title="${p.done ? 'Publicado — clique para desmarcar' : 'Marcar como publicado'}">${ICON.check}</button>
+    <div class="t">${esc(p.title)}</div>
+    <div class="m">${meta}</div>
+  </div>`;
+}
+
+function renderTimeline(){
+  const { y, m } = view;
+  const n = daysIn(y, m);
+  const posts = monthPosts();
 
   grid.style.gridTemplateColumns = `var(--ch-w) repeat(${n}, var(--day-w))`;
   let h = `<div class="corner" style="grid-row:1/span 2;grid-column:1">Canais</div>`;
 
-  // Week bands (Monday → Sunday)
   let d = 1, w = 1;
   while (d <= n){
     const wd = new Date(y, m, d).getDay();
@@ -385,77 +676,232 @@ function render(){
     d = end + 1; w++;
   }
 
-  // Day headers
   const dayCls = [];
   for (let d = 1; d <= n; d++){
     const wd = new Date(y, m, d).getDay();
     const cls = [(wd===1 && d>1)?'wk-start':'', (wd===0||wd===6)?'we':'', iso(y,m,d)===TODAY?'today':''].join(' ');
     dayCls[d] = cls;
-    h += `<div class="dh ${cls}" style="grid-row:2;grid-column:${d+1}"><span class="wdn">${WD[wd]}</span><span class="dn">${d}</span></div>`;
+    h += `<div class="dh ${cls}" style="grid-row:2;grid-column:${d+1}"><span class="dn">${d}</span><span class="wdn">${WD[wd]}</span></div>`;
   }
 
-  // Index posts by cell
   const byCell = {};
-  monthPosts.forEach(p => (byCell[p.channelId + '|' + p.date] ||= []).push(p));
+  posts.forEach(p => (byCell[p.channelId + '|' + p.date] ||= []).push(p));
 
   chans().forEach((c, i) => {
     const r = i + 3;
-    const count = monthPosts.filter(p => p.channelId === c.id).length;
+    const count = posts.filter(p => p.channelId === c.id).length;
     h += `<div class="ch" style="grid-row:${r};grid-column:1">
       <span class="ch-name" data-ch="${c.id}" title="Clique para renomear">${esc(c.name)}</span>
       <span class="ch-count" title="Posts neste mês">${count}</span>
       <span class="ch-tools">
-        <button class="ch-up" data-ch="${c.id}" title="Mover para cima">▲</button>
-        <button class="ch-del" data-ch="${c.id}" title="Remover canal">✕</button>
-        <button class="ch-down" data-ch="${c.id}" title="Mover para baixo">▼</button>
+        <button class="ch-up" data-ch="${c.id}" aria-label="Mover ${esc(c.name)} para cima">${ICON.up}</button>
+        <button class="ch-del" data-ch="${c.id}" aria-label="Remover ${esc(c.name)}">${ICON.x}</button>
+        <button class="ch-down" data-ch="${c.id}" aria-label="Mover ${esc(c.name)} para baixo">${ICON.down}</button>
       </span></div>`;
     for (let d = 1; d <= n; d++){
       const date = iso(y,m,d);
-      const posts = (byCell[c.id + '|' + date] || []).map(postHtml).join('');
-      h += `<div class="cell ${dayCls[d]}" data-ch="${c.id}" data-date="${date}" style="grid-row:${r};grid-column:${d+1}">${posts}<button class="add" title="Adicionar post">+</button></div>`;
+      const ps = (byCell[c.id + '|' + date] || []).map(p => postHtml(p)).join('');
+      h += `<div class="cell ${dayCls[d]}" data-drop data-ch="${c.id}" data-date="${date}" style="grid-row:${r};grid-column:${d+1}">${ps}<button class="add" aria-label="Adicionar post em ${esc(c.name)}, ${d} de ${MONTHS[m].toLowerCase()}">${ICON.plus}</button></div>`;
     }
   });
 
   const r = state.channels.length + 3;
-  h += `<div class="ch ch-add" style="grid-row:${r};grid-column:1"><form id="addChannel"><input name="name" placeholder="+ Novo canal" autocomplete="off"></form></div>`;
+  h += `<div class="ch ch-add" style="grid-row:${r};grid-column:1"><form id="addChannel"><input name="name" placeholder="+ Novo canal" aria-label="Nome do novo canal" autocomplete="off"></form></div>`;
   h += `<div class="filler" style="grid-row:${r};grid-column:2/-1"></div>`;
-
   grid.innerHTML = h;
-  renderPeople();
 }
 
-function postHtml(p){
-  const pe = person(p.personId);
-  const color = pe ? pe.color : '#94a3b8';
-  const dim = focusPerson && p.personId !== focusPerson ? 'dim' : '';
-  return `<div class="post ${p.done?'done':''} ${dim}" draggable="true" data-id="${p.id}" style="--c:${color}" title="Clique para editar · arraste para mover">
-    <button class="chk" title="${p.done?'Publicado — clique para desmarcar':'Marcar como publicado'}">✓</button>
-    <div class="t">${esc(p.title)}</div>
-    <div class="p">${pe ? esc(pe.name) : '<i>sem responsável</i>'}</div>
-  </div>`;
+function renderCalendar(){
+  const { y, m } = view;
+  const n = daysIn(y, m);
+  const lead = (new Date(y, m, 1).getDay() + 6) % 7; // Monday first
+  const total = Math.ceil((lead + n) / 7) * 7;
+  const byDate = {};
+  monthPosts().forEach(p => (byDate[p.date] ||= []).push(p));
+  const order = new Map(chans().map((c, i) => [c.id, i]));
+
+  let h = '<div class="mgrid">' + ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(d => `<div class="mhead">${d}</div>`).join('');
+  for (let i = 0; i < total; i++){
+    const dt = new Date(y, m, 1 - lead + i);
+    const inMonth = dt.getMonth() === m;
+    const ds = iso(dt.getFullYear(), dt.getMonth(), dt.getDate());
+    const wd = dt.getDay();
+    const posts = inMonth ? (byDate[ds] || []).sort((a, b) => (order.get(a.channelId) ?? 99) - (order.get(b.channelId) ?? 99)) : [];
+    const cls = ['mday', !inMonth && 'out', ds === TODAY && 'today', (wd === 0 || wd === 6) && 'we'].filter(Boolean).join(' ');
+    h += `<div class="${cls}" ${inMonth ? `data-drop data-date="${ds}"` : ''}>
+      <div class="mday-h"><span class="dnum">${dt.getDate()}</span>${inMonth ? `<button class="add" data-date="${ds}" aria-label="Adicionar post em ${fmtDate(ds)}">${ICON.plus}</button>` : ''}</div>
+      <div class="mposts">${posts.map(p => postHtml(p, true)).join('')}</div>
+    </div>`;
+  }
+  $('#month').innerHTML = h + '</div>';
 }
+
+/* ---------------- Charts ---------------- */
+function tile(label, value, sub, accent){
+  return `<div class="card tile${accent ? ' accent' : ''}"><div class="lbl">${label}</div><div class="num">${value}</div><div class="sub">${sub}</div></div>`;
+}
+function tableHtml(head, rows){
+  return `<details class="tbl"><summary>Ver dados em tabela</summary><table><thead><tr>${head.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${
+    rows.map(r => `<tr>${r.map(x => `<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table></details>`;
+}
+function hbarChart(title, sub, rows){
+  const max = Math.max(1, ...rows.map(r => r.pub + r.pen));
+  const body = rows.map(r => {
+    const t = r.pub + r.pen;
+    const bar = t
+      ? `<span class="hbar">${r.pub ? `<span class="seg pub${r.pen ? '' : ' end'}" style="width:${r.pub / max * 100}%"></span>` : ''}${r.pen ? `<span class="seg pen end" style="width:${r.pen / max * 100}%"></span>` : ''}</span>`
+      : `<span class="hzero"></span>`;
+    return `<div class="hrow" data-tip="${esc(r.label)}" data-pub="${r.pub}" data-pen="${r.pen}">
+      <div class="hlabel">${r.color ? `<i class="dot" style="background:${r.color}"></i>` : ''}<span>${esc(r.label)}</span></div>
+      <div class="htrack">${bar}<span class="hval">${t}</span></div>
+    </div>`;
+  }).join('');
+  const aria = rows.map(r => `${r.label}: ${r.pub + r.pen} posts, ${r.pub} publicados`).join('; ');
+  return `<article class="card chart"><header><h3>${title}</h3><p>${sub}</p></header>
+    <div class="hbars" role="img" aria-label="${esc(title + '. ' + aria)}">${body}</div>
+    ${tableHtml(['Nome', 'Publicados', 'Pendentes', 'Total'], rows.map(r => [esc(r.label), r.pub, r.pen, r.pub + r.pen]))}
+  </article>`;
+}
+function niceMax(v){ if (v <= 4) return Math.max(v, 1); const p = Math.pow(10, Math.floor(Math.log10(v))); for (const s of [1, 2, 2.5, 5, 10]) if (s * p >= v) return s * p; return v; }
+function dayChart(){
+  const { y, m } = view; const n = daysIn(y, m);
+  const days = Array.from({ length: n }, (_, i) => ({ d: i + 1, date: iso(y, m, i + 1), pub: 0, pen: 0 }));
+  monthPosts().forEach(p => { const x = days[Number(p.date.slice(8)) - 1]; if (x) p.done ? x.pub++ : x.pen++; });
+  const top = niceMax(Math.max(...days.map(x => x.pub + x.pen)));
+  const ticks = top <= 1 ? [top] : [Math.round(top / 2 * 10) / 10, top];
+  const lines = ticks.map(t => `<div class="gridline" style="bottom:${t / top * 100}%"><span>${t}</span></div>`).join('');
+  const cols = days.map(x => {
+    const wd = new Date(y, m, x.d).getDay();
+    const segs = [];
+    if (x.pen) segs.push(`<span class="seg pen top" style="height:${x.pen / top * 100}%"></span>`);
+    if (x.pub) segs.push(`<span class="seg pub${x.pen ? '' : ' top'}" style="height:${x.pub / top * 100}%"></span>`);
+    return `<div class="col${wd === 1 && x.d > 1 ? ' wkstart' : ''}" data-tip="${WD[wd]}, ${x.d} de ${MONTHS_S[m]}" data-pub="${x.pub}" data-pen="${x.pen}"><div class="stack">${segs.join('')}</div></div>`;
+  }).join('');
+  const todayD = TODAY.startsWith(monthPrefix()) ? Number(TODAY.slice(8)) : -9;
+  let lastShown = -9;
+  const labels = days.map(x => {
+    const wd = new Date(y, m, x.d).getDay();
+    const isToday = x.d === todayD;
+    const show = isToday || ((x.d === 1 || wd === 1) && x.d - lastShown >= 3 && Math.abs(x.d - todayD) >= 3);
+    if (show) lastShown = x.d;
+    return `<span class="${isToday ? 'today' : ''}">${show ? x.d : ''}</span>`;
+  }).join('');
+  const busiest = days.reduce((a, b) => (b.pub + b.pen > a.pub + a.pen ? b : a), days[0]);
+  const sub = busiest.pub + busiest.pen ? `Dia mais cheio: ${busiest.d} de ${MONTHS_S[m]} (${plural(busiest.pub + busiest.pen, 'post', 'posts')})` : '';
+  return `<article class="card chart wide"><header><h3>Ritmo do mês</h3><p>${sub}</p></header>
+    <div class="cols-wrap" role="img" aria-label="Posts por dia em ${MONTHS[m]}">
+      <div class="cols">${lines}${cols}</div>
+      <div class="xlabels">${labels}</div>
+    </div>
+    ${tableHtml(['Dia', 'Publicados', 'Pendentes', 'Total'], days.filter(x => x.pub + x.pen).map(x => [`${x.d}/${MONTHS_S[m]}`, x.pub, x.pen, x.pub + x.pen]))}
+  </article>`;
+}
+function renderCharts(){
+  const posts = monthPosts();
+  const pub = posts.filter(p => p.done).length, pen = posts.length - pub;
+  const active = new Set(posts.map(p => p.personId).filter(id => person(id))).size;
+  let h = `<div class="tiles">
+    ${tile('Posts no mês', posts.length, `${MONTHS[view.m]} de ${view.y}`, true)}
+    ${tile('Publicados', pub, posts.length ? `${Math.round(pub / posts.length * 100)}% do total` : 'nenhum ainda')}
+    ${tile('Pendentes', pen, pen ? 'ainda a publicar' : 'tudo em dia')}
+    ${tile('Responsáveis ativos', active, `de ${plural(state.people.length, 'cadastrado', 'cadastrados')}`)}
+  </div>`;
+  if (!posts.length){
+    $('#charts').innerHTML = h + `<div class="card empty-state" style="margin-top:16px">${ICON.chart}<h3>Nenhum post em ${MONTHS[view.m].toLowerCase()}</h3><p>Adicione posts na linha do tempo ou no calendário e os gráficos aparecem aqui.</p><button class="btn primary" data-goto="timeline">Ir para a linha do tempo</button></div>`;
+    return;
+  }
+  const count = (list, key, id) => { const xs = list.filter(p => key(p) === id); const pb = xs.filter(p => p.done).length; return { pub: pb, pen: xs.length - pb }; };
+  const peopleRows = state.people.map(pe => ({ label: pe.name, color: pe.color, ...count(posts, p => p.personId, pe.id) }));
+  const orphan = posts.filter(p => !person(p.personId));
+  if (orphan.length){ const pb = orphan.filter(p => p.done).length; peopleRows.push({ label: 'Sem responsável', color: '#94A3B8', pub: pb, pen: orphan.length - pb }); }
+  peopleRows.sort((a, b) => (b.pub + b.pen) - (a.pub + a.pen));
+  const chRows = chans().map(c => ({ label: c.name, ...count(posts, p => p.channelId, c.id) }))
+    .sort((a, b) => (b.pub + b.pen) - (a.pub + a.pen));
+  const top = peopleRows[0];
+  h += `<div class="legend" style="margin:18px 0 10px"><span><i class="sw pub"></i>Publicado</span><span><i class="sw pen"></i>Pendente</span></div>
+    <div class="charts-grid">
+      ${hbarChart('Posts por responsável', top && top.pub + top.pen ? `${esc(top.label)} lidera com ${plural(top.pub + top.pen, 'post', 'posts')}` : '', peopleRows)}
+      ${hbarChart('Posts por canal', `${plural(chRows.filter(r => r.pub + r.pen).length, 'canal ativo', 'canais ativos')}`, chRows)}
+      ${dayChart()}
+    </div>`;
+  $('#charts').innerHTML = h;
+}
+
+// Tooltip for chart marks (hit target = whole row / column)
+const tip = $('#tip');
+document.addEventListener('mousemove', e => {
+  const t = e.target.closest?.('#charts [data-tip]');
+  if (!t){ tip.classList.remove('show'); return; }
+  const pub = +t.dataset.pub, pen = +t.dataset.pen;
+  tip.innerHTML = `<b class="h">${esc(t.dataset.tip)}</b>
+    <div class="r"><span><i class="sw pub"></i>Publicados</span><b>${pub}</b></div>
+    <div class="r"><span><i class="sw pen"></i>Pendentes</span><b>${pen}</b></div>
+    <div class="r" style="border-top:1px solid rgba(255,255,255,.15);margin-top:4px;padding-top:4px"><span>Total</span><b>${pub + pen}</b></div>`;
+  const w = tip.offsetWidth, hgt = tip.offsetHeight;
+  let x = e.clientX + 14, y = e.clientY - hgt - 12;
+  if (x + w > innerWidth - 8) x = e.clientX - w - 14;
+  if (y < 8) y = e.clientY + 16;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  tip.classList.add('show');
+});
 
 function renderPeople(){
   const prefix = monthPrefix();
   const box = $('#people');
   if (!state.people.length){
-    box.innerHTML = `<div class="empty">Nenhum responsável ainda. Adicione o primeiro acima 👆</div>`;
+    box.innerHTML = `<div class="empty">Nenhum responsável ainda. Adicione o primeiro acima.</div>`;
     return;
   }
   box.innerHTML = state.people.map(p => {
     const mine = state.posts.filter(x => x.personId === p.id && x.date.startsWith(prefix));
     const done = mine.filter(x => x.done).length;
-    return `<div class="person ${focusPerson===p.id?'active':''}">
-      <input type="color" value="${p.color}" data-pc="${p.id}" title="Mudar cor">
-      <span class="pname" data-p="${p.id}" title="Destacar posts desta pessoa">${esc(p.name)}</span>
-      <span class="pcount">${mine.length} no mês · ${done} publicado${done===1?'':'s'}</span>
-      <button class="pedit" data-p="${p.id}" title="Renomear">✎</button>
-      <button class="pdel" data-p="${p.id}" title="Remover">✕</button>
+    return `<div class="person ${focusPerson === p.id ? 'active' : ''}">
+      <input type="color" value="${p.color}" data-pc="${p.id}" aria-label="Cor de ${esc(p.name)}" title="Mudar cor">
+      <button class="pname" data-p="${p.id}" aria-pressed="${focusPerson === p.id}" title="Destacar posts desta pessoa">${esc(p.name)}</button>
+      <span class="pcount">${mine.length} no mês · ${done} ${done === 1 ? 'publicado' : 'publicados'}</span>
+      <span class="tools">
+        <button class="pedit" data-p="${p.id}" aria-label="Renomear ${esc(p.name)}">${ICON.pencil}</button>
+        <button class="pdel" data-p="${p.id}" aria-label="Remover ${esc(p.name)}">${ICON.x}</button>
+      </span>
     </div>`;
   }).join('');
 }
 
-/* ---------------- Dialog helpers ---------------- */
+/* ---------------- Tabs ---------------- */
+const tabInd = $('#tabInd');
+function moveIndicator(){
+  const t = document.querySelector(`.tab[data-view="${viewMode}"]`);
+  if (!t) return;
+  tabInd.style.width = t.offsetWidth + 'px';
+  tabInd.style.transform = `translateX(${t.offsetLeft}px)`;
+}
+function setView(v, animate = true){
+  if (!HASH[v]) return;
+  viewMode = v;
+  localStorage.setItem('mktcal.view', v);
+  history.replaceState(null, '', '#' + HASH[v]);
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.view === v));
+  document.querySelectorAll('.view').forEach(el => {
+    const on = el.dataset.view === v;
+    el.hidden = !on;
+    if (on && animate){ el.classList.remove('entering'); void el.offsetWidth; el.classList.add('entering'); }
+  });
+  tip.classList.remove('show');
+  moveIndicator();
+  render();
+  if (v === 'timeline' && view.y === now.getFullYear() && view.m === now.getMonth()) scrollToDay(now.getDate());
+}
+$('#tabs').addEventListener('click', e => { const t = e.target.closest('.tab'); if (t) setView(t.dataset.view); });
+$('#tabs').addEventListener('keydown', e => {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+  const keys = Object.keys(HASH); const i = keys.indexOf(viewMode);
+  const v = keys[(i + (e.key === 'ArrowRight' ? 1 : keys.length - 1)) % keys.length];
+  setView(v, false); document.querySelector(`.tab[data-view="${v}"]`).focus();
+});
+addEventListener('resize', moveIndicator);
+document.addEventListener('animationend', e => e.target.classList?.remove('entering', 'enter', 'ticked'));
+
+/* ---------------- Dialog ---------------- */
 let dlgSubmit = null;
 function openDialog(html, onSubmit, focusSel){
   dlgForm.innerHTML = html;
@@ -481,62 +927,84 @@ dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
 dlg.addEventListener('close', () => { delete dlgForm.dataset.postId; });
 
 function promptText(title, value, placeholder, cb){
-  openDialog(`<h3>${esc(title)}</h3>
-    <input type="text" name="v" required value="${esc(value)}" placeholder="${esc(placeholder||'')}" autocomplete="off">
+  openDialog(`<div><h3>${esc(title)}</h3></div>
+    <input type="text" name="v" required value="${esc(value)}" placeholder="${esc(placeholder || '')}" autocomplete="off">
     <div class="actions"><span class="sp"></span><button type="button" class="btn" data-act="cancel">Cancelar</button><button class="btn primary">Salvar</button></div>`,
     fd => { const v = fd.get('v').trim(); if (!v) return false; cb(v); });
 }
 
-function openPost({ id, ch, date }){
+function openPost({ id, ch, date, pickChannel }){
   const p = id ? state.posts.find(x => x.id === id) : null;
-  const c = channel(p ? p.channelId : ch);
+  const chId = p ? p.channelId : (ch || chans()[0]?.id);
   const dt = p ? p.date : date;
+  const showChannel = !!p || !!pickChannel;
   const sel = p ? p.personId : (person(getLastPerson()) ? getLastPerson() : (state.people[0]?.id || ''));
-  const opts = state.people.map(pe => `<option value="${pe.id}" ${pe.id===sel?'selected':''}>${esc(pe.name)}</option>`).join('');
+  const opts = state.people.map(pe => `<option value="${pe.id}" ${pe.id === sel ? 'selected' : ''}>${esc(pe.name)}</option>`).join('');
+  const chOpts = chans().map(c => `<option value="${c.id}" ${c.id === chId ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+  const sub = showChannel ? fmtDate(dt) : `${esc(channel(chId)?.name)} · ${fmtDate(dt)}`;
   openDialog(`
-    <h3>${p ? 'Editar post' : 'Novo post'}</h3>
-    <p class="sub">${esc(c?.name)} · ${fmtDate(dt)}</p>
-    <label>Nome do post
+    <div><h3>${p ? 'Editar post' : 'Novo post'}</h3><p class="sub">${sub}</p></div>
+    <label class="field">Nome do post
       <input type="text" name="title" required autocomplete="off" value="${p ? esc(p.title) : ''}" placeholder="Ex.: Dicas para quem vai prestar vestibular">
     </label>
-    <label>Responsável
-      <select name="person">${state.people.length ? '' : '<option value="">— nenhum cadastrado —</option>'}${opts}${p && !person(p.personId) && state.people.length ? '<option value="" selected>— sem responsável —</option>' : ''}</select>
+    <label class="field">Responsável
+      <select name="person">${state.people.length ? '' : '<option value="">Nenhum cadastrado</option>'}${opts}${p && !person(p.personId) && state.people.length ? '<option value="" selected>Sem responsável</option>' : ''}</select>
     </label>
-    ${state.people.length ? '' : '<p class="hint">Você ainda não cadastrou responsáveis. Adicione na seção <b>Responsáveis</b>, abaixo do calendário.</p>'}
-    ${p ? `<label class="row"><input type="checkbox" name="done" ${p.done?'checked':''}> Já foi publicado</label>` : ''}
+    ${showChannel ? `<div class="row2">
+      <label class="field">Canal<select name="channel" required>${chOpts}</select></label>
+      ${p ? `<label class="field">Data<input type="date" name="date" value="${dt}" required></label>` : ''}
+    </div>` : ''}
+    ${state.people.length ? '' : '<p class="hint">Você ainda não cadastrou responsáveis. Adicione na seção <b>Responsáveis</b>, abaixo.</p>'}
+    ${!chans().length ? '<p class="hint">Crie um canal primeiro, na linha do tempo.</p>' : ''}
+    ${p ? `<label class="check-row"><input type="checkbox" name="done" ${p.done ? 'checked' : ''}> Já foi publicado</label>` : ''}
     <div class="actions">
       ${p ? '<button type="button" class="btn danger" data-act="delete">Excluir</button>' : ''}
       <span class="sp"></span>
       <button type="button" class="btn" data-act="cancel">Cancelar</button>
-      <button class="btn primary">${p ? 'Salvar' : 'Adicionar'}</button>
+      <button class="btn primary">${p ? 'Salvar' : 'Adicionar post'}</button>
     </div>`,
     fd => {
       const title = fd.get('title').trim();
       if (!title) return false;
       const personId = fd.get('person') || '';
+      const channelId = fd.get('channel') || chId;
+      if (!channelId) return false;
       setLastPerson(personId);
-      if (p){ commit(upsert('posts', { ...p, title, personId, done: fd.get('done') === 'on' })); }
-      else { commit(upsert('posts', { id: uid(), title, personId, channelId: ch, date, done: false, ts: Date.now() })); toast('Post adicionado'); }
+      if (p){
+        const date2 = fd.get('date') || p.date;
+        const moved = date2 !== p.date || channelId !== p.channelId;
+        commit(upsert('posts', { ...p, title, personId, channelId, date: date2, done: fd.get('done') === 'on', ts: moved ? Date.now() : p.ts }));
+      } else {
+        const np = { id: uid(), title, personId, channelId, date: dt, done: false, ts: Date.now() };
+        justAdded = np.id;
+        commit(upsert('posts', np));
+        toast('Post adicionado');
+      }
     });
   if (p) dlgForm.dataset.postId = p.id;
 }
 
-/* ---------------- Calendar interactions ---------------- */
+/* ---------------- Interactions ---------------- */
 let suppressClick = false;
-grid.addEventListener('click', e => {
+document.querySelector('main').addEventListener('click', e => {
   if (suppressClick) return;
   const t = e.target;
+  if (t.closest('#clearFocus')){ focusPerson = null; return render(); }
+  const go = t.closest('[data-goto]'); if (go) return setView(go.dataset.goto);
   if (t.closest('.chk')){
     const p = state.posts.find(x => x.id === t.closest('.post').dataset.id);
-    p.done = !p.done; commit(upsert('posts', p));
-    toast(p.done ? 'Marcado como publicado ✓' : 'Desmarcado');
+    p.done = !p.done; justTicked = p.id;
+    commit(upsert('posts', p));
+    toast(p.done ? 'Marcado como publicado' : 'Desmarcado');
     return;
   }
   const post = t.closest('.post');
   if (post) return openPost({ id: post.dataset.id });
-  if (t.closest('.add')){
-    const cell = t.closest('.cell');
-    return openPost({ ch: cell.dataset.ch, date: cell.dataset.date });
+  const add = t.closest('.add');
+  if (add){
+    const cell = add.closest('.cell');
+    if (cell) return openPost({ ch: cell.dataset.ch, date: cell.dataset.date });
+    return openPost({ date: add.dataset.date, pickChannel: true });
   }
   const chName = t.closest('.ch-name');
   if (chName){
@@ -549,7 +1017,8 @@ grid.addEventListener('click', e => {
     const count = state.posts.filter(p => p.channelId === c.id).length;
     if (!confirm(`Remover o canal "${c.name}"?` + (count ? `\n\nOs ${count} post(s) desse canal também serão apagados.` : ''))) return;
     const gone = state.posts.filter(p => p.channelId === c.id).map(p => p.id);
-    commit(remove('channels', c.id), gone.map(id => remove('posts', id))); toast('Canal removido');
+    commit(remove('channels', c.id), gone.map(id => remove('posts', id)));
+    toast('Canal removido');
     return;
   }
   const mv = t.closest('.ch-up, .ch-down');
@@ -563,9 +1032,12 @@ grid.addEventListener('click', e => {
   }
 });
 
-grid.addEventListener('dblclick', e => {
+document.querySelector('main').addEventListener('dblclick', e => {
+  if (e.target.closest('.post, button')) return;
   const cell = e.target.closest('.cell');
-  if (cell && !e.target.closest('.post, button')) openPost({ ch: cell.dataset.ch, date: cell.dataset.date });
+  if (cell) return openPost({ ch: cell.dataset.ch, date: cell.dataset.date });
+  const day = e.target.closest('.mday[data-drop]');
+  if (day) openPost({ date: day.dataset.date, pickChannel: true });
 });
 
 grid.addEventListener('submit', e => {
@@ -579,47 +1051,50 @@ grid.addEventListener('submit', e => {
   toast(`Canal "${name}" criado`);
 });
 
-/* Drag & drop of posts */
+/* Drag & drop of posts (timeline cells and calendar days) */
 let dragId = null, overCell = null;
-grid.addEventListener('dragstart', e => {
-  const post = e.target.closest('.post');
+const mainEl = document.querySelector('main');
+mainEl.addEventListener('dragstart', e => {
+  const post = e.target.closest?.('.post');
   if (!post) return;
   dragId = post.dataset.id;
   e.dataTransfer.effectAllowed = 'copyMove';
   e.dataTransfer.setData('text/plain', dragId);
-  setTimeout(() => post.classList.add('dragging'), 0);
+  requestAnimationFrame(() => post.classList.add('dragging'));
 });
-grid.addEventListener('dragover', e => {
-  const cell = e.target.closest('.cell');
+mainEl.addEventListener('dragover', e => {
+  const cell = e.target.closest('[data-drop]');
   if (!cell || !dragId) return;
   e.preventDefault();
   e.dataTransfer.dropEffect = (e.ctrlKey || e.altKey) ? 'copy' : 'move';
   if (overCell !== cell){ overCell?.classList.remove('over'); cell.classList.add('over'); overCell = cell; }
 });
-grid.addEventListener('drop', e => {
-  const cell = e.target.closest('.cell');
+mainEl.addEventListener('drop', e => {
+  const cell = e.target.closest('[data-drop]');
   if (!cell || !dragId) return;
   e.preventDefault();
   const p = state.posts.find(x => x.id === dragId);
+  if (!p) return endDrag();
   const copy = e.ctrlKey || e.altKey;
-  const target = { channelId: cell.dataset.ch, date: cell.dataset.date };
+  const target = { channelId: cell.dataset.ch || p.channelId, date: cell.dataset.date };
+  endDrag();
   if (copy){
-    commit(upsert('posts', { ...p, ...target, id: uid(), done: false, ts: Date.now() }));
+    const np = { ...p, ...target, id: uid(), done: false, ts: Date.now() };
+    justAdded = np.id;
+    commit(upsert('posts', np));
     toast(`Post duplicado em ${channel(target.channelId).name} · ${fmtShort(target.date)}`);
   } else if (p.channelId !== target.channelId || p.date !== target.date){
     Object.assign(p, target, { ts: Date.now() });
     commit(upsert('posts', p));
     toast(`Movido para ${channel(target.channelId).name} · ${fmtShort(target.date)}`);
-  }
-  endDrag(); render();
+  } else render();
 });
-grid.addEventListener('dragend', endDrag);
+mainEl.addEventListener('dragend', () => { const had = pendingRender; endDrag(); if (had) safeRender(); });
 function endDrag(){
   dragId = null;
   overCell?.classList.remove('over'); overCell = null;
-  grid.querySelectorAll('.dragging').forEach(x => x.classList.remove('dragging'));
+  document.querySelectorAll('.dragging').forEach(x => x.classList.remove('dragging'));
 }
-// Auto-scroll sideways when dragging a post near the edges
 scroller.addEventListener('dragover', e => {
   if (!dragId) return;
   const r = scroller.getBoundingClientRect();
@@ -628,13 +1103,13 @@ scroller.addEventListener('dragover', e => {
   else if (e.clientX > r.right - 70) scroller.scrollLeft += 24;
 });
 
-/* Click-and-drag on the background to pan */
+/* Click-and-drag on the background to pan the timeline */
 let pan = null;
 scroller.addEventListener('mousedown', e => {
   if (e.button !== 0 || e.target.closest('.post, button, input, .ch, form')) return;
   pan = { x: e.clientX, y: e.clientY, sl: scroller.scrollLeft, st: scroller.scrollTop, moved: false };
 });
-window.addEventListener('mousemove', e => {
+addEventListener('mousemove', e => {
   if (!pan) return;
   const dx = e.clientX - pan.x, dy = e.clientY - pan.y;
   if (!pan.moved && Math.abs(dx) + Math.abs(dy) < 5) return;
@@ -643,11 +1118,10 @@ window.addEventListener('mousemove', e => {
   scroller.scrollLeft = pan.sl - dx;
   scroller.scrollTop = pan.st - dy;
 });
-window.addEventListener('mouseup', () => {
+addEventListener('mouseup', () => {
   if (pan?.moved){ suppressClick = true; setTimeout(() => suppressClick = false, 0); }
   pan = null; scroller.classList.remove('panning');
 });
-// Mouse wheel over the day headers scrolls sideways
 scroller.addEventListener('wheel', e => {
   if (e.target.closest('.dh, .wk') && Math.abs(e.deltaY) > Math.abs(e.deltaX)){
     e.preventDefault(); scroller.scrollLeft += e.deltaY;
@@ -655,10 +1129,10 @@ scroller.addEventListener('wheel', e => {
 }, { passive: false });
 
 function scrollToDay(day){
-  const el = grid.querySelector(`.dh:nth-of-type(1)`) && [...grid.querySelectorAll('.dh')][day-1];
+  const el = [...grid.querySelectorAll('.dh')][day - 1];
   if (!el) return;
   const chW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--ch-w'));
-  scroller.scrollLeft = Math.max(0, el.offsetLeft - chW - 2 * el.offsetWidth);
+  scroller.scrollLeft = Math.max(0, el.offsetLeft - chW - el.offsetWidth);
 }
 
 /* ---------------- People ---------------- */
@@ -667,7 +1141,7 @@ $('#addPerson').addEventListener('submit', e => {
   const inp = $('#personInput');
   const name = inp.value.trim();
   if (!name) return;
-  const used = state.people.map(p => p.color);
+  const used = state.people.map(p => p.color.toLowerCase());
   const color = COLORS.find(c => !used.includes(c)) || COLORS[state.people.length % COLORS.length];
   inp.value = '';
   commit(upsert('people', { id: uid(), name, color }));
@@ -697,13 +1171,13 @@ $('#people').addEventListener('input', e => {
   const c = e.target.closest('[data-pc]');
   if (!c) return;
   person(c.dataset.pc).color = c.value;
-  grid.querySelectorAll('.post').forEach(el => {
+  document.querySelectorAll('.post').forEach(el => {
     const p = state.posts.find(x => x.id === el.dataset.id);
     if (p?.personId === c.dataset.pc) el.style.setProperty('--c', c.value);
   });
 });
 
-/* ---------------- Top bar ---------------- */
+/* ---------------- Toolbar ---------------- */
 function go(delta){
   view.m += delta;
   if (view.m < 0){ view.m = 11; view.y--; }
@@ -712,7 +1186,7 @@ function go(delta){
 }
 $('#prev').onclick = () => go(-1);
 $('#next').onclick = () => go(1);
-$('#todayBtn').onclick = () => { view = { y: now.getFullYear(), m: now.getMonth() }; render(); scrollToDay(now.getDate()); };
+$('#todayBtn').onclick = () => { view = { y: now.getFullYear(), m: now.getMonth() }; render(); if (viewMode === 'timeline') scrollToDay(now.getDate()); };
 
 $('#exportBtn').onclick = () => {
   const blob = new Blob([JSON.stringify({ channels: state.channels, people: state.people, posts: state.posts }, null, 2)], { type: 'application/json' });
@@ -736,12 +1210,14 @@ $('#importFile').onchange = async e => {
 
 let toastT;
 function toast(msg){
-  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800);
+  const t = $('#toast'); t.innerHTML = `${ICON.check}<span>${esc(msg)}</span>`; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1900);
 }
 
-render();
-scrollToDay(now.getDate());
+/* ---------------- Boot ---------------- */
+setView(viewMode, false);
+requestAnimationFrame(() => { moveIndicator(); requestAnimationFrame(() => tabInd.classList.add('ready')); });
+document.fonts?.ready.then(moveIndicator);
 subscribe();
 pull();
 </script>
