@@ -173,6 +173,7 @@
 <dialog id="dlg"><form id="dlgForm" method="dialog"></form></dialog>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const COLORS = ['#4f46e5','#0ea5e9','#10b981','#f59e0b','#ef4444','#ec4899','#8b5cf6','#14b8a6','#f97316','#64748b'];
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -191,18 +192,37 @@ const parseIso = s => { const [y,m,d] = s.split('-').map(Number); return new Dat
 const fmtDate = s => { const d = parseIso(s); return `${WD_L[d.getDay()]}, ${d.getDate()} de ${MONTHS[d.getMonth()].toLowerCase()}`; };
 const fmtShort = s => { const d = parseIso(s); return `${d.getDate()}/${MONTHS_S[d.getMonth()]}`; };
 
-/* ---------------- Sync with server (live) ----------------
-   Every change is applied locally right away and sent to /api/op.
-   Every open tab polls /api/ver; when the version changes it reloads /api/state. */
-const CACHE_KEY = 'mktcal.cache.v2';
+/* ---------------- Sync with Supabase (live) ----------------
+   Every change is applied locally right away and saved to Supabase.
+   Supabase Realtime pushes changes made on any other device to every open tab. */
+const SUPABASE_URL = 'https://nsnuvctbagyoxwntzeab.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_rubX2rQVYLDc2kHcpnoJtQ_goOUputn'; // chave pública (publishable) — pode ficar no site
+const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+const MAP = {
+  channels: {
+    to:   v => ({ id: v.id, name: v.name, ord: v.order ?? 0, updated_at: new Date().toISOString() }),
+    from: r => ({ id: r.id, name: r.name, order: r.ord }),
+  },
+  people: {
+    to:   v => ({ id: v.id, name: v.name, color: v.color, updated_at: new Date().toISOString() }),
+    from: r => ({ id: r.id, name: r.name, color: r.color }),
+  },
+  posts: {
+    to:   v => ({ id: v.id, title: v.title, person_id: v.personId || null, channel_id: v.channelId, date: v.date, done: !!v.done, ts: v.ts || 0, updated_at: new Date().toISOString() }),
+    from: r => ({ id: r.id, title: r.title, personId: r.person_id || '', channelId: r.channel_id, date: r.date, done: !!r.done, ts: Number(r.ts) || 0 }),
+  },
+};
+const COLLS = Object.keys(MAP);
+
+const CACHE_KEY = 'mktcal.cache.v3';
 let state = { channels: [], people: [], posts: [] };
-let ver = 0;
 try { const c = JSON.parse(localStorage.getItem(CACHE_KEY)); if (c?.state) state = c.state; } catch(e){}
 const cacheLocal = () => { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ state })); } catch(e){} };
 const getLastPerson = () => localStorage.getItem('mktcal.lastPerson') || '';
 const setLastPerson = id => localStorage.setItem('mktcal.lastPerson', id);
 
-let queue = [], sending = false, needFetch = false, online = null;
+let queue = [], sending = false, needFetch = false, online = null, channelOk = false;
 const clone = v => JSON.parse(JSON.stringify(v));
 function upsert(c, v){
   const arr = state[c]; const i = arr.findIndex(x => x.id === v.id);
@@ -218,63 +238,108 @@ function commit(...ops){
   cacheLocal(); render(); flush();
 }
 
+function explain(e){
+  if (!sb) return 'Não foi possível carregar o Supabase';
+  if (e && (e.code === 'PGRST205' || e.code === '42P01')) return 'Banco sem tabelas — rode o supabase/schema.sql';
+  return 'Sem conexão — tentando de novo…';
+}
+
 async function flush(){
   if (sending || !queue.length) return;
   sending = true;
   const batch = queue.splice(0);
   try {
-    const r = await fetch('/api/op', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops: batch }) });
-    if (!r.ok) throw new Error(await r.text());
-    const { ver: nv } = await r.json();
-    if (nv === ver + 1) ver = nv; else needFetch = true;
-    setOnline(true);
+    if (!sb) throw null;
+    // Only the last operation per item matters
+    const last = new Map();
+    batch.forEach(op => last.set(op.c + '|' + (op.v ? op.v.id : op.id), op));
+    const ops = [...last.values()];
+    for (const c of COLLS){
+      const puts = ops.filter(o => o.c === c && o.t === 'put').map(o => MAP[c].to(o.v));
+      const dels = ops.filter(o => o.c === c && o.t === 'del').map(o => o.id);
+      if (puts.length){ const { error } = await sb.from(c).upsert(puts); if (error) throw error; }
+      if (dels.length){ const { error } = await sb.from(c).delete().in('id', dels); if (error) throw error; }
+    }
     sending = false;
   } catch (e) {
+    console.error(e);
     queue.unshift(...batch);
-    setOnline(false);
+    setOnline(false, explain(e));
     sending = false;
     setTimeout(flush, 3000);
     return;
   }
+  if (online === false && channelOk) setOnline(true);
   if (queue.length) flush();
   else if (needFetch) pull();
 }
 
+async function selectAll(table){
+  const rows = [];
+  for (let from = 0; ; from += 1000){
+    const { data, error } = await sb.from(table).select('*').range(from, from + 999);
+    if (error) throw error;
+    rows.push(...data);
+    if (data.length < 1000) return rows;
+  }
+}
+
 async function pull(){
   try {
-    const r = await fetch('/api/state', { cache: 'no-store' });
-    if (!r.ok) throw new Error();
-    const s = await r.json();
+    if (!sb) throw null;
+    const [ch, pe, po] = await Promise.all(COLLS.map(selectAll));
     if (queue.length || sending){ needFetch = true; return; }
     needFetch = false;
-    ver = s.ver;
-    state = { channels: s.channels, people: s.people, posts: s.posts };
-    cacheLocal(); safeRender(); setOnline(true);
-  } catch (e) { setOnline(false); }
+    state = { channels: ch.map(MAP.channels.from), people: pe.map(MAP.people.from), posts: po.map(MAP.posts.from) };
+    cacheLocal(); safeRender();
+    if (channelOk) setOnline(true);
+  } catch (e) { console.error(e); setOnline(false, explain(e)); }
 }
 
-let lastActivity = Date.now();
-['mousemove','keydown','touchstart','scroll'].forEach(ev => window.addEventListener(ev, () => lastActivity = Date.now(), { passive: true, capture: true }));
-async function poll(){
-  if (!document.hidden){
-    try {
-      const r = await fetch('/api/ver', { cache: 'no-store' });
-      if (!r.ok) throw new Error();
-      const { ver: v } = await r.json();
-      setOnline(true);
-      if (v > ver && !queue.length && !sending) await pull();
-    } catch (e) { setOnline(false); }
+// Realtime: apply changes made on other devices as they happen
+function onRemoteChange(c, p){
+  if (p.eventType === 'DELETE'){
+    const id = p.old?.id; if (!id) return;
+    state[c] = state[c].filter(x => x.id !== id);
+  } else {
+    const v = MAP[c].from(p.new);
+    const arr = state[c]; const i = arr.findIndex(x => x.id === v.id);
+    if (i < 0) arr.push(v); else arr[i] = v;
   }
-  const idle = Date.now() - lastActivity > 5 * 60 * 1000;
-  setTimeout(poll, idle ? 10000 : 2500);
+  cacheLocal(); safeRender();
 }
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { lastActivity = Date.now(); pull(); } });
+function subscribe(){
+  if (!sb) return setOnline(false, explain());
+  const ch = sb.channel('mktcal');
+  COLLS.forEach(c => ch.on('postgres_changes', { event: '*', schema: 'public', table: c }, p => onRemoteChange(c, p)));
+  ch.subscribe(status => {
+    if (status === 'SUBSCRIBED'){ channelOk = true; setOnline(true); pull(); }
+    else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED'){ channelOk = false; setOnline(false); }
+  });
+}
+// Safety net: re-sync when the tab comes back and once a minute
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
+setInterval(() => { if (!document.hidden) pull(); }, 60000);
 
-function setOnline(ok){
-  if (online === ok) return; online = ok;
+async function resetAll(data){
+  for (const c of COLLS){
+    const { error } = await sb.from(c).delete().neq('id', '');
+    if (error) throw error;
+    const rows = (data[c] || []).map(MAP[c].to);
+    for (let i = 0; i < rows.length; i += 500){
+      const { error: e2 } = await sb.from(c).insert(rows.slice(i, i + 500));
+      if (e2) throw e2;
+    }
+  }
+}
+
+function setOnline(ok, msg){
+  const text = ok ? 'Ao vivo' : (msg || 'Sem conexão — tentando de novo…');
   const el = $('#live');
+  if (online === ok && el.textContent === text) return;
+  online = ok;
   el.className = 'live' + (ok ? '' : ' off');
-  el.textContent = ok ? 'Ao vivo' : 'Sem conexão — tentando de novo…';
+  el.textContent = text;
 }
 
 // Avoid redrawing while the user is dragging or typing inside the calendar
@@ -663,8 +728,7 @@ $('#importFile').onchange = async e => {
     const s = JSON.parse(await f.text());
     if (!Array.isArray(s.channels) || !Array.isArray(s.posts) || !Array.isArray(s.people)) throw 0;
     if (!confirm('Substituir todos os dados atuais pelo backup?')) return;
-    const r = await fetch('/api/op', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reset: { channels: s.channels, people: s.people, posts: s.posts } }) });
-    if (!r.ok) throw 0;
+    await resetAll(s);
     await pull(); toast('Backup importado');
   } catch { alert('Arquivo inválido.'); }
   e.target.value = '';
@@ -678,7 +742,8 @@ function toast(msg){
 
 render();
 scrollToDay(now.getDate());
-pull().then(() => { setTimeout(poll, 2500); });
+subscribe();
+pull();
 </script>
 </body>
 </html>

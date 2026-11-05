@@ -1,6 +1,0 @@
-{
-  "name": "calendario-marketing",
-  "private": true,
-  "type": "module",
-  "engines": { "node": ">=20" }
-}

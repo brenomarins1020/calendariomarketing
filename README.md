@@ -1,6 +1,6 @@
 # 📅 Calendário de Marketing
 
-Calendário simples de publicações por canal, com sincronização **ao vivo** entre dispositivos.
+Calendário simples de publicações por canal, com sincronização **ao vivo** entre dispositivos (Supabase Realtime).
 
 - Coluna fixa com os canais (você cria, renomeia, reordena e remove)
 - Todos os dias do mês no topo, com divisão por semanas (segunda a domingo)
@@ -10,33 +10,42 @@ Calendário simples de publicações por canal, com sincronização **ao vivo** 
 - Seção **Responsáveis**: cadastre as pessoas, escolha a cor e clique no nome para destacar os posts dela
 - ✓ para marcar como publicado
 - Exportar/Importar backup em JSON
-- Tudo o que alguém muda aparece nos outros dispositivos em ~2–3 segundos (indicador "Ao vivo" no topo)
+- O que alguém muda aparece na hora em todos os dispositivos abertos (indicador **"Ao vivo"** no topo)
 
-## Como funciona
+## Estrutura
 
 | Arquivo | O que faz |
 |---|---|
-| `index.html` | O site inteiro (HTML + CSS + JS, sem build) |
-| `api/state.js` | `GET` — devolve canais, responsáveis e posts |
-| `api/op.js` | `POST` — grava alterações (criar, editar, mover, excluir) |
-| `api/ver.js` | `GET` — número da versão; cada aba consulta a cada 2,5 s e recarrega quando muda |
-| `api/_redis.js` | Cliente mínimo do Upstash Redis via REST (sem dependências) |
+| `index.html` | O site inteiro (HTML + CSS + JS, sem build, sem servidor) |
+| `supabase/schema.sql` | Cria as tabelas `channels`, `people` e `posts`, as permissões e o tempo real |
 
-Os dados ficam num banco **Upstash Redis** (plano gratuito é suficiente).
+O site fala direto com o Supabase usando a chave **publishable** (pública), que fica em `index.html`.
+A chave **secret** não é usada pelo site e **nunca** deve ser colocada no código.
 
-## Publicar no Vercel
+## 1. Preparar o banco (uma vez só)
+
+1. Abra o projeto no [Supabase](https://supabase.com/dashboard) → **SQL Editor** → **New query**.
+2. Cole todo o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) e clique em **Run**.
+
+Pronto: as tabelas são criadas, o tempo real é ligado e os canais iniciais são inseridos.
+
+## 2. Publicar no Vercel
 
 1. Em [vercel.com/new](https://vercel.com/new), importe este repositório.
-   Não precisa mudar nada nas configurações (Framework: **Other**, sem comando de build). Clique em **Deploy**.
-2. No projeto criado, vá em **Storage → Create Database → Upstash → Upstash for Redis**.
-   Aceite os termos, escolha o plano **Free** e a região mais próxima (ex.: São Paulo), e **conecte ao projeto** (deixe todos os ambientes marcados).
-   Isso cria automaticamente as variáveis `KV_REST_API_URL` e `KV_REST_API_TOKEN`.
-3. Vá em **Deployments → ⋯ no último deploy → Redeploy** (as variáveis só valem para deploys novos).
-4. Abra o site: o indicador no topo deve mostrar **"Ao vivo"**. Na primeira abertura, os canais padrão são criados automaticamente.
+2. Não precisa mudar nada (Framework: **Other**, sem comando de build, sem variáveis de ambiente). Clique em **Deploy**.
+3. Abra o site: o indicador no topo deve mostrar **"Ao vivo"**.
 
-> Se aparecer "Sem conexão", confira se o banco está conectado ao projeto (Settings → Environment Variables deve listar `KV_REST_API_URL` e `KV_REST_API_TOKEN`) e faça o Redeploy.
+## Trocar de projeto Supabase
+
+No `index.html`, altere as duas linhas no início do script:
+
+```js
+const SUPABASE_URL = 'https://SEU-PROJETO.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_...';
+```
 
 ## Observações
 
 - Qualquer pessoa com o link consegue ver e editar o calendário.
 - Arrastar posts funciona no computador; no celular dá para ver, adicionar e editar tocando nos posts.
+- Se aparecer "Banco sem tabelas", rode o `supabase/schema.sql` (passo 1).
