@@ -1,6 +1,6 @@
 # 📅 Calendário de Marketing
 
-Calendário simples de publicações por canal, com sincronização **ao vivo** entre dispositivos (Supabase Realtime).
+Calendário simples de publicações por canal, com contas (usuário + senha) e sincronização **ao vivo** entre dispositivos (Supabase Realtime).
 
 - Coluna fixa com os canais (você cria, renomeia, reordena e remove)
 - Todos os dias do mês no topo, com divisão por semanas (segunda a domingo)
@@ -18,7 +18,7 @@ Calendário simples de publicações por canal, com sincronização **ao vivo** 
 |---|---|
 | `index.html` | O site inteiro (HTML + CSS + JS, sem build, sem servidor) |
 | `supabase/schema.sql` | Cria as tabelas `channels`, `people` e `posts`, as permissões e o tempo real |
-| `supabase/whatsapp.sql` | Lembretes no WhatsApp (Z-API): coluna `phone`, agendamento diário às 13h e funções de envio |
+| `supabase/auth.sql` | Contas: cada registro ganha um dono e cada conta só vê o que é seu |
 
 O site fala direto com o Supabase usando a chave **publishable** (pública), que fica em `index.html`.
 A chave **secret** não é usada pelo site e **nunca** deve ser colocada no código.
@@ -30,25 +30,14 @@ A chave **secret** não é usada pelo site e **nunca** deve ser colocada no cód
 
 Pronto: as tabelas são criadas, o tempo real é ligado e os canais iniciais são inseridos.
 
-## 1b. Lembretes no WhatsApp (Z-API)
+## 1b. Contas (usuário + senha)
 
-Todo dia às **13h (Brasília)**, cada responsável com WhatsApp cadastrado recebe a lista dos posts dele marcados para o **dia seguinte** que ainda não foram publicados.
+Cada conta tem o seu próprio calendário (canais, responsáveis e posts).
 
-1. No SQL Editor do Supabase, rode [`supabase/whatsapp.sql`](supabase/whatsapp.sql).
-2. Na [Z-API](https://z-api.io), crie uma instância e leia o QR Code com o WhatsApp que vai **enviar** as mensagens.
-3. Cadastre as credenciais (Instance ID, Token e o Client-Token da aba Segurança):
+1. No SQL Editor do Supabase, rode [`supabase/auth.sql`](supabase/auth.sql).
+2. Em **Authentication → Sign In / Providers → Email**, desligue **Confirm email** e salve.
 
-```sql
-insert into public.app_settings (key, value) values
-  ('zapi_instance_id',  'SEU_INSTANCE_ID'),
-  ('zapi_token',        'SEU_TOKEN'),
-  ('zapi_client_token', 'SEU_CLIENT_TOKEN')
-on conflict (key) do update set value = excluded.value;
-```
-
-4. No site, cadastre (ou edite no ✎) o WhatsApp de cada responsável com DDD.
-
-Teste: `select public.mkt_whatsapp_send('11987654321', 'Teste ✅');` — e veja a resposta em `select * from net._http_response order by created desc limit 5;`
+O site pede só usuário e senha. Por baixo, o usuário vira um e-mail interno (`usuario@calendariomarketing.vercel.app`) que ninguém precisa ver nem digitar.
 
 ## 2. Publicar no Vercel
 
@@ -67,6 +56,6 @@ const SUPABASE_KEY = 'sb_publishable_...';
 
 ## Observações
 
-- Qualquer pessoa com o link consegue ver e editar o calendário.
-- Arrastar posts funciona no computador; no celular dá para ver, adicionar e editar tocando nos posts.
+- É preciso entrar com usuário e senha; cada conta vê só o próprio calendário.
+- No celular: abas embaixo, linha do tempo por dia (deslize para os lados), calendário compacto com a lista do dia e gráfico por semana.
 - Se aparecer "Banco sem tabelas", rode o `supabase/schema.sql` (passo 1).

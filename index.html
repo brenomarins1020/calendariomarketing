@@ -92,7 +92,7 @@
   .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-sm)}
 
   /* ---------- Timeline (channels × days) ---------- */
-  .scroller{overflow:auto;max-height:calc(100vh - 250px);min-height:340px;cursor:grab;border-radius:var(--r-lg)}
+  .scroller{position:relative;overflow:auto;max-height:calc(100vh - 250px);min-height:340px;cursor:grab;border-radius:var(--r-lg)}
   .scroller.panning{cursor:grabbing}
   .grid{display:grid;width:max-content;user-select:none}
   .corner{position:sticky;left:0;top:0;z-index:6;background:var(--surface);border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;align-items:flex-end;padding:10px 16px;font-size:13px;font-weight:500;color:var(--muted)}
@@ -257,13 +257,7 @@
   .sec-h h2{font-size:16px;font-weight:600;margin:0}
   .muted{color:var(--muted);font-size:13px}
   .add-person{display:flex;gap:8px;margin-bottom:10px;max-width:640px;flex-wrap:wrap}
-  .add-person input#personInput{flex:1 1 200px}
-  .add-person input#phoneInput{flex:1 1 200px}
-  .wa-note{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--ink-2);background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--r-sm);padding:9px 12px;margin-bottom:16px;max-width:640px}
-  .wa-note .ic{color:var(--blue);margin-top:1px}
-  .pphone{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:#047857;font-variant-numeric:tabular-nums}
-  .pphone .ic{width:13px;height:13px}
-  .pphone.none{color:#B45309}
+  .add-person input#personInput{flex:1 1 220px}
   .wnum{font-size:11.5px;font-weight:500;color:var(--blue-700);background:var(--blue-50);border-radius:999px;padding:1px 7px;margin-left:6px}
   .mday-h .left{display:flex;align-items:center}
   .add-person input{flex:1;min-width:0;height:38px;border:1px solid var(--line);border-radius:var(--r-sm);padding:0 12px;background:#fff;transition:border-color 140ms ease, box-shadow 140ms ease}
@@ -315,6 +309,30 @@
   .toast.show{opacity:1;transform:translate(-50%,0);transition-duration:220ms}
   .toast .ic{color:#93C5FD}
 
+  /* ---------- Auth ---------- */
+  body.locked > .top, body.locked > main{visibility:hidden}
+  .auth{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:24px 16px;overflow:auto;
+        background:radial-gradient(900px 520px at 50% -12%, #DBEAFE 0%, rgba(219,234,254,0) 62%), var(--bg)}
+  .auth-card{width:min(400px,100%);background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 20px 50px rgba(15,23,42,.10);padding:28px 24px;animation:authIn 280ms var(--ease-out)}
+  @keyframes authIn{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:none}}
+  .auth-brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .auth-brand h1{font-size:18px;margin:0;font-weight:600;letter-spacing:-.01em}
+  .auth-brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+  .auth-tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--sunken);border-radius:10px;padding:4px;margin-bottom:18px}
+  .auth-tabs button{height:36px;border:0;background:none;border-radius:7px;font-weight:500;color:var(--muted);transition:background-color 160ms ease, color 160ms ease, box-shadow 160ms ease}
+  .auth-tabs button[aria-selected="true"]{background:#fff;color:var(--blue-700);box-shadow:0 1px 3px rgba(15,23,42,.1)}
+  .auth form{display:flex;flex-direction:column;gap:14px}
+  .auth input{height:44px;border:1px solid var(--line);border-radius:var(--r-sm);padding:0 12px;font-size:16px;font-weight:400;background:#fff;color:var(--ink);width:100%;transition:border-color 140ms ease, box-shadow 140ms ease}
+  .auth input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-100)}
+  .auth .btn.primary{height:44px;justify-content:center;font-size:15px;margin-top:2px}
+  .auth .btn.primary:disabled{opacity:.7;cursor:progress}
+  .auth-err{margin:0;font-size:13px;color:#B91C1C;background:#FEF2F2;border:1px solid #FECACA;border-radius:var(--r-sm);padding:9px 12px}
+  .auth-hint{margin:0;font-size:12.5px;color:var(--muted)}
+  .user-chip{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 4px 0 6px;border:1px solid var(--line);border-radius:999px;font-size:13px;font-weight:500;color:var(--ink-2);background:#fff}
+  .user-chip .avatar{width:26px;height:26px;border-radius:50%;background:var(--blue-100);color:var(--blue-700);display:grid;place-items:center;font-size:12px;font-weight:600;text-transform:uppercase}
+  .user-chip .icon-btn{width:28px;height:28px;border:0;border-radius:50%}
+  .user-chip .icon-btn .ic{width:15px;height:15px}
+
   /* ---------- Responsive ---------- */
   @media (max-width: 1100px){ .tiles{grid-template-columns:repeat(2,minmax(0,1fr))} .charts-grid{grid-template-columns:1fr} }
   @media (max-width: 860px){
@@ -336,7 +354,162 @@
     .scroller{max-height:calc(100vh - 290px)}
     .hint-bar{display:none}
   }
-  @media (max-width: 520px){ .tiles{grid-template-columns:1fr 1fr;gap:10px} .tile .num{font-size:26px} .tab .ic{display:none} .row2{grid-template-columns:1fr} }
+  @media (max-width: 520px){ .tiles{grid-template-columns:1fr 1fr;gap:10px} .tile .num{font-size:26px} .row2{grid-template-columns:1fr} }
+
+  /* ---------- Mobile components ---------- */
+  .daystrip{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 2px 10px;margin:0 -12px 2px;padding-left:12px;padding-right:12px;scrollbar-width:none}
+  .daystrip::-webkit-scrollbar{display:none}
+  .ds{flex:none;width:52px;height:64px;border:1px solid var(--line);background:#fff;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:0;scroll-snap-align:center;
+      transition:background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms var(--ease-out)}
+  .ds:active{transform:scale(.95)}
+  .ds span{font-size:11.5px;color:var(--muted);font-weight:500}
+  .ds b{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2}
+  .ds i{font-style:normal;font-size:10.5px;font-weight:600;color:var(--blue-700);background:var(--blue-50);border-radius:999px;min-width:18px;height:15px;line-height:15px;padding:0 5px;text-align:center}
+  .ds i.z{background:none}
+  .ds.wk{margin-left:8px}
+  .ds.today{border-color:var(--blue-200)}
+  .ds.today b{color:var(--blue-700)}
+  .ds.sel{background:var(--blue);border-color:var(--blue);color:#fff}
+  .ds.sel span{color:#DBEAFE}
+  .ds.sel i{background:rgba(255,255,255,.2);color:#fff}
+
+  .mm{padding:14px 12px 8px}
+  .mm-head,.mm-grid{display:grid;grid-template-columns:30px repeat(7,minmax(0,1fr));column-gap:2px}
+  .mm-head span{font-size:12px;color:var(--muted);text-align:center;font-weight:500;padding-bottom:6px}
+  .mm-grid{row-gap:2px}
+  .mm-wk{font-size:11px;color:var(--blue-700);display:grid;place-items:center;font-weight:600;opacity:.75;font-variant-numeric:tabular-nums}
+  .mm-day{height:50px;border:0;background:none;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0;color:var(--ink);transition:transform 160ms var(--ease-out)}
+  .mm-day:active{transform:scale(.92)}
+  .mm-day .n{font-size:15px;font-weight:500;font-variant-numeric:tabular-nums;width:32px;height:32px;display:grid;place-items:center;border-radius:50%;transition:background-color 160ms ease, color 160ms ease}
+  .mm-day.we .n{color:var(--muted)}
+  .mm-day.today .n{color:var(--blue-700);font-weight:700;box-shadow:inset 0 0 0 1.5px var(--blue-200)}
+  .mm-day.sel .n{background:var(--blue);color:#fff;box-shadow:none}
+  .mm-day.out{visibility:hidden;pointer-events:none}
+  .mm-day .dots{display:flex;gap:3px;height:5px}
+  .mm-day .dots i{width:5px;height:5px;border-radius:50%}
+  .agenda{border-top:1px solid var(--line);padding:16px 12px 16px}
+  .ag-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+  .ag-head h3{margin:0;font-size:17px;font-weight:600;letter-spacing:-.01em}
+  .ag-head h3::first-letter{text-transform:uppercase}
+  .ag-head p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+  .ag-head .btn{height:44px;padding:0 16px}
+  .ag-list{display:flex;flex-direction:column;gap:8px}
+  .ag-list.entering{animation:viewIn 200ms var(--ease-out)}
+  .ag-empty{padding:22px 16px;text-align:center;color:var(--muted);font-size:14px;border:1px dashed var(--line-2);border-radius:12px}
+  .ag-list .post{padding:12px 52px 12px 18px;border-radius:12px}
+  .ag-list .post::before{left:6px;top:12px;bottom:12px;width:4px}
+  .ag-list .post .t{font-size:15px}
+  .ag-list .post .m{font-size:13px;margin-top:3px}
+  .ag-list .post .chk{width:28px;height:28px;top:50%;margin-top:-14px;right:12px}
+  .ag-list .post .chk .ic{width:15px;height:15px}
+
+  .dayview{overflow:hidden}
+  .dv-head{display:flex;align-items:center;gap:8px;padding:12px;border-bottom:1px solid var(--line)}
+  .dv-head > div{flex:1;min-width:0;text-align:center}
+  .dv-head h3{margin:0;font-size:16px;font-weight:600;letter-spacing:-.01em}
+  .dv-head h3::first-letter{text-transform:uppercase}
+  .dv-head p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+  .dv-head .icon-btn{width:44px;height:44px;flex:none}
+  .dv-head .icon-btn:disabled{opacity:.35}
+  .dv-list.from-right{animation:dvRight 220ms var(--ease-out)}
+  .dv-list.from-left{animation:dvLeft 220ms var(--ease-out)}
+  @keyframes dvRight{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+  @keyframes dvLeft{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+  .dv-ch{padding:12px;border-bottom:1px solid var(--line)}
+  .dv-ch:last-child{border-bottom:0}
+  .dv-ch-h{display:flex;align-items:center;gap:8px;min-height:36px}
+  .dv-ch-h .ch-name{flex:1;font-size:14.5px;margin:0;padding:6px 8px;margin-left:-8px}
+  .dv-ch-h .n{font-size:12px;color:var(--blue-700);background:var(--blue-50);border-radius:999px;padding:1px 8px;font-weight:500}
+  .dv-ch-h .add-ch{width:40px;height:40px;border-radius:10px;border:1px dashed var(--blue-200);background:none;color:var(--blue);display:grid;place-items:center;padding:0;transition:transform 160ms var(--ease-out), background-color 140ms ease}
+  .dv-ch-h .add-ch:active{transform:scale(.94);background:var(--blue-50)}
+  .dv-posts{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  .dv-posts:empty{display:none}
+  .dv-posts .post{padding:12px 52px 12px 18px;border-radius:12px}
+  .dv-posts .post::before{left:6px;top:12px;bottom:12px;width:4px}
+  .dv-posts .post .t{font-size:15px}
+  .dv-posts .post .m{font-size:13px;margin-top:3px}
+  .dv-posts .post .chk{width:28px;height:28px;top:50%;margin-top:-14px;right:12px}
+  .dv-posts .post .chk .ic{width:15px;height:15px}
+  .dv-add{padding:12px}
+  .dv-add input{width:100%;height:44px;border:1px dashed var(--line-2);border-radius:var(--r-sm);padding:0 12px;background:var(--bg);font-size:16px}
+  .dv-add input:focus{outline:none;border-style:solid;border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px var(--blue-100)}
+  .cols.weeks{gap:12px}
+  .cols.weeks .col .stack{width:min(60%,40px)}
+  .xlabels.weeks{gap:12px}
+  .xlabels.weeks span{font-size:12px;line-height:1.35;white-space:normal}
+  .xlabels.weeks b{display:block;font-weight:600;color:var(--ink-2)}
+  .xlabels.weeks span.today b{color:var(--blue-700)}
+  .row-btns{display:flex;gap:8px}
+  .row-btns .btn{flex:1;justify-content:center}
+
+  @media (max-width: 720px){
+    /* Header: compact; tabs become a bottom bar within thumb reach */
+    .top-row{padding:10px 12px;gap:10px;flex-wrap:nowrap}
+    .brand{flex:1;gap:10px}
+    .brand h1{font-size:15px;white-space:normal;line-height:1.2}
+    .logo{width:34px;height:34px}
+    #userName{display:none}
+    .top-actions{gap:6px}
+    .top-actions .btn{width:36px;padding:0;justify-content:center}
+    .top-actions .btn span{display:none}
+    .tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;order:0;width:auto;margin:0;border-radius:0;display:grid;grid-template-columns:repeat(3,1fr);
+          background:rgba(255,255,255,.97);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -4px 16px rgba(15,23,42,.05)}
+    .tab{flex-direction:column;justify-content:center;height:54px;gap:4px;font-size:12px;padding:0}
+    .tab .ic{display:block;width:21px;height:21px}
+    .tab-ind{top:6px;height:54px;background:var(--blue-50);box-shadow:none}
+    main{padding:12px 12px calc(88px + env(safe-area-inset-bottom));gap:12px}
+    .toast{bottom:calc(86px + env(safe-area-inset-bottom))}
+    .toolbar{gap:10px}
+    .month-nav{width:100%}
+    .month-nav h2{flex:1;font-size:18px;min-width:0}
+    .month-nav .icon-btn,.month-nav .btn{height:40px}
+    .month-nav .icon-btn{width:40px}
+    .chips{width:100%;margin:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+
+    /* Timeline: one day per screen, swipe sideways, channels stay on the left */
+    :root{--ch-w:96px;--day-w:calc(100vw - 122px);--wk-h:30px}
+    .scroller{scroll-snap-type:x mandatory;scroll-padding-left:var(--ch-w);max-height:calc(100dvh - 330px);min-height:300px;cursor:auto;overscroll-behavior-x:contain}
+    .dh{scroll-snap-align:start;padding:8px 12px}
+    .dh .wdn{font-size:13px}
+    .corner{padding:8px 10px;font-size:12px}
+    .ch{padding:12px 6px 12px 10px;flex-wrap:nowrap}
+    .ch-name{font-size:13.5px;flex-basis:auto}
+    .ch-count,.ch-tools{display:none}
+    .cell{min-height:76px;padding:8px}
+    .post{padding:10px 40px 10px 14px}
+    .post .t{font-size:14.5px}
+    .post .m{font-size:12.5px}
+    .post .chk{width:24px;height:24px;top:9px;right:9px}
+    .post .chk .ic{width:13px;height:13px}
+    .add{height:36px}
+    .wk .lbl{left:calc(var(--ch-w) + 8px);padding:0 8px;font-size:12.5px}
+
+    /* Calendar card */
+    .month-wrap{overflow:visible}
+
+    /* Charts */
+    .tiles{grid-template-columns:1fr 1fr;gap:10px}
+    .tile{padding:14px}
+    .tile .num{font-size:28px}
+    .tile .sub{font-size:12.5px}
+    .legend{margin:14px 0 6px !important}
+    .charts-grid{gap:12px}
+    .chart{padding:16px 14px}
+    .chart header{margin-bottom:10px}
+    .hrow{grid-template-columns:minmax(72px,34%) 1fr;gap:10px;padding:8px 4px}
+    .hlabel{font-size:14px}
+    .hbar{height:16px}
+    .cols{height:170px}
+
+    /* People */
+    .people-card{padding:16px 14px}
+    .add-person .btn{height:44px}
+    .add-person input{height:44px;font-size:16px}
+    .person{width:100%;flex-wrap:wrap}
+    .pcount{flex:1}
+    .person .tools button{width:36px;height:36px}
+    dialog input[type=text],dialog input[type=date],dialog select{height:44px;font-size:16px}
+  }
 
   /* ---------- Reduced motion: keep fades, drop movement ---------- */
   @media (prefers-reduced-motion: reduce){
@@ -350,9 +523,31 @@
     .toast,.toast.show{transform:translate(-50%,0)}
   }
   @keyframes fadeOnly{from{opacity:0}to{opacity:1}}
+  @media (prefers-reduced-motion: reduce){ .dv-list.from-right,.dv-list.from-left,.ag-list.entering{animation:fadeOnly 160ms ease} }
 </style>
 </head>
-<body>
+<body class="locked">
+
+<div class="auth" id="auth" hidden>
+  <div class="auth-card" role="dialog" aria-labelledby="authTitle">
+    <div class="auth-brand">
+      <span class="logo" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>
+      <div><h1 id="authTitle">Calendário de Marketing</h1><p id="authSub">Entre para ver o seu calendário</p></div>
+    </div>
+    <div class="auth-tabs" role="tablist" id="authTabs">
+      <button type="button" role="tab" data-mode="login" aria-selected="true">Entrar</button>
+      <button type="button" role="tab" data-mode="signup" aria-selected="false">Criar conta</button>
+    </div>
+    <form id="authForm" novalidate>
+      <label class="field">Usuário<input name="user" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required></label>
+      <label class="field">Senha<input name="pass" type="password" autocomplete="current-password" required></label>
+      <label class="field" id="pass2Field" hidden>Confirmar senha<input name="pass2" type="password" autocomplete="new-password"></label>
+      <p class="auth-err" id="authErr" role="alert" hidden></p>
+      <button class="btn primary" id="authBtn">Entrar</button>
+      <p class="auth-hint" id="authHint" hidden>Usuário com 3 a 30 letras, números, ponto ou traço. Senha com pelo menos 6 caracteres.</p>
+    </form>
+  </div>
+</div>
 
 <header class="top">
   <div class="top-row">
@@ -370,6 +565,7 @@
       <button class="tab" role="tab" data-view="charts" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M7 16v-5M12 16V6M17 16v-8"/></svg>Gráficos</button>
     </nav>
     <div class="top-actions">
+      <span class="user-chip" id="userChip" title="Conta conectada"><span class="avatar" id="userAvatar"></span><span id="userName"></span><button class="icon-btn" id="logoutBtn" aria-label="Sair da conta" title="Sair"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 012 2v12a2 2 0 01-2 2h-3M10 17l5-5-5-5M15 12H4"/></svg></button></span>
       <button class="btn" id="exportBtn" title="Baixar um backup dos dados"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span>Exportar</span></button>
       <button class="btn" id="importBtn" title="Restaurar um backup"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V9M7 14l5-5 5 5M5 4h14"/></svg><span>Importar</span></button>
       <input type="file" id="importFile" accept="application/json" hidden>
@@ -389,12 +585,14 @@
   </section>
 
   <section class="view" data-view="timeline" id="view-timeline">
+    <div class="daystrip" id="daystrip" hidden aria-label="Dias do mês"></div>
     <div class="card scroller" id="scroller"><div class="grid" id="grid"></div></div>
+    <div class="card dayview" id="dayview" hidden></div>
     <div class="hint-bar">
       <span>Arraste o fundo para rolar para os lados</span>
       <span>Arraste um post para mudar de dia ou canal</span>
       <span><kbd>Ctrl</kbd> ao soltar duplica</span>
-      <span>Clique no nome do canal para renomear</span>
+      <span>Clique no nome do canal para editar</span>
     </div>
   </section>
 
@@ -413,10 +611,8 @@
     </div>
     <form class="add-person" id="addPerson">
       <input id="personInput" placeholder="Nome do responsável" aria-label="Nome do responsável" required autocomplete="off">
-      <input id="phoneInput" type="tel" inputmode="tel" placeholder="WhatsApp (DDD + número)" aria-label="WhatsApp com DDD" autocomplete="off">
       <button class="btn primary"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Adicionar</button>
     </form>
-    <p class="wa-note"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 01-12.4 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1121 11.5z"/></svg><span>Lembrete no WhatsApp: todo dia às <b>13h</b>, cada responsável recebe a lista dos posts dele marcados para o <b>dia seguinte</b> que ainda não foram publicados.</span></p>
     <div class="people" id="people"></div>
   </section>
 </main>
@@ -465,18 +661,6 @@ function weekOfYear(d){
   return Math.floor((dayIdx + (jan1.getDay() + 6) % 7) / 7) + 1;
 }
 
-// Phone: stored as digits with country code (55 + DDD + number)
-function normPhone(v){
-  let d = String(v || '').replace(/\D/g, '');
-  if (!d) return '';
-  if (d.length === 10 || d.length === 11) d = '55' + d;
-  return (d.length >= 12 && d.length <= 13) ? d : null; // null = invalid
-}
-function fmtPhone(d){
-  if (!d) return '';
-  const m = d.match(/^55(\d{2})(\d{4,5})(\d{4})$/);
-  return m ? `(${m[1]}) ${m[2]}-${m[3]}` : '+' + d;
-}
 
 /* ---------------- Sync with Supabase (live) ----------------
    Every change is applied locally right away and saved to Supabase.
@@ -491,8 +675,8 @@ const MAP = {
     from: r => ({ id: r.id, name: r.name, order: r.ord }),
   },
   people: {
-    to:   v => ({ id: v.id, name: v.name, color: v.color, ...(noPhoneCol ? {} : { phone: v.phone || null }), updated_at: new Date().toISOString() }),
-    from: r => ({ id: r.id, name: r.name, color: r.color, phone: r.phone || '' }),
+    to:   v => ({ id: v.id, name: v.name, color: v.color, updated_at: new Date().toISOString() }),
+    from: r => ({ id: r.id, name: r.name, color: r.color }),
   },
   posts: {
     to:   v => ({ id: v.id, title: v.title, person_id: v.personId || null, channel_id: v.channelId, date: v.date, done: !!v.done, ts: v.ts || 0, updated_at: new Date().toISOString() }),
@@ -500,12 +684,15 @@ const MAP = {
   },
 };
 const COLLS = Object.keys(MAP);
-let noPhoneCol = false; // true until supabase/whatsapp.sql adds people.phone
 
-const CACHE_KEY = 'mktcal.cache.v3';
+let currentUser = null, rtChannel = null;
 let state = { channels: [], people: [], posts: [] };
-try { const c = JSON.parse(localStorage.getItem(CACHE_KEY)); if (c?.state) state = c.state; } catch(e){}
-const cacheLocal = () => { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ state })); } catch(e){} };
+const cacheKey = () => 'mktcal.cache.v4.' + (currentUser ? currentUser.id : 'anon');
+const cacheLocal = () => { if (!currentUser) return; try { localStorage.setItem(cacheKey(), JSON.stringify({ state })); } catch(e){} };
+function loadCache(){
+  state = { channels: [], people: [], posts: [] };
+  try { const c = JSON.parse(localStorage.getItem(cacheKey())); if (c?.state) state = c.state; } catch(e){}
+}
 const getLastPerson = () => localStorage.getItem('mktcal.lastPerson') || '';
 const setLastPerson = id => localStorage.setItem('mktcal.lastPerson', id);
 
@@ -532,7 +719,7 @@ function explain(e){
 }
 
 async function flush(){
-  if (sending || !queue.length) return;
+  if (sending || !queue.length || !currentUser) return;
   sending = true;
   const batch = queue.splice(0);
   try {
@@ -543,14 +730,7 @@ async function flush(){
     for (const c of COLLS){
       const puts = ops.filter(o => o.c === c && o.t === 'put').map(o => MAP[c].to(o.v));
       const dels = ops.filter(o => o.c === c && o.t === 'del').map(o => o.id);
-      if (puts.length){
-        let { error } = await sb.from(c).upsert(puts);
-        if (error && c === 'people' && error.code === 'PGRST204' && !noPhoneCol){
-          noPhoneCol = true;
-          ({ error } = await sb.from(c).upsert(ops.filter(o => o.c === c && o.t === 'put').map(o => MAP[c].to(o.v))));
-        }
-        if (error) throw error;
-      }
+      if (puts.length){ const { error } = await sb.from(c).upsert(puts); if (error) throw error; }
       if (dels.length){ const { error } = await sb.from(c).delete().in('id', dels); if (error) throw error; }
     }
     sending = false;
@@ -578,13 +758,14 @@ async function selectAll(table){
 }
 
 async function pull(){
+  if (!currentUser) return;
   try {
     if (!sb) throw null;
     const [ch, pe, po] = await Promise.all(COLLS.map(selectAll));
     if (queue.length || sending){ needFetch = true; return; }
     needFetch = false;
     state = { channels: ch.map(MAP.channels.from), people: pe.map(MAP.people.from), posts: po.map(MAP.posts.from) };
-    cacheLocal(); safeRender();
+    cacheLocal(); safeRender(); maybeSeed();
     if (channelOk) setOnline(true);
   } catch (e) { console.error(e); setOnline(false, explain(e)); }
 }
@@ -602,7 +783,8 @@ function onRemoteChange(c, p){
 }
 function subscribe(){
   if (!sb) return setOnline(false, explain());
-  const ch = sb.channel('mktcal');
+  if (rtChannel) sb.removeChannel(rtChannel);
+  const ch = rtChannel = sb.channel('mktcal-' + currentUser.id);
   COLLS.forEach(c => ch.on('postgres_changes', { event: '*', schema: 'public', table: c }, p => onRemoteChange(c, p)));
   ch.subscribe(status => {
     if (status === 'SUBSCRIBED'){ channelOk = true; setOnline(true); pull(); }
@@ -637,7 +819,7 @@ function setOnline(ok, msg){
 let pendingRender = false;
 function safeRender(){
   const ae = document.activeElement;
-  const typing = ae && ae.tagName === 'INPUT' && (grid.contains(ae) || $('#people').contains(ae));
+  const typing = ae && ae.tagName === 'INPUT' && (grid.contains(ae) || $('#dayview').contains(ae) || $('#people').contains(ae));
   if (dragId || typing) { pendingRender = true; return; }
   pendingRender = false; render();
 }
@@ -645,6 +827,10 @@ document.addEventListener('focusout', () => setTimeout(() => { if (pendingRender
 const chans = () => [...state.channels].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
 /* ---------------- View state ---------------- */
+const mq = matchMedia('(max-width: 720px)');
+const isMobile = () => mq.matches;
+const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+let selDay = null, curDay = 0, tlDay = 0;
 const now = new Date();
 const TODAY = iso(now.getFullYear(), now.getMonth(), now.getDate());
 let view = { y: now.getFullYear(), m: now.getMonth() };
@@ -701,6 +887,9 @@ function postHtml(p, compact){
 }
 
 function renderTimeline(){
+  const mobile = isMobile();
+  scroller.hidden = mobile; $('#dayview').hidden = !mobile;
+  if (mobile){ renderDayStrip(); return renderTimelineMobile(0); }
   const { y, m } = view;
   const n = daysIn(y, m);
   const posts = monthPosts();
@@ -731,7 +920,7 @@ function renderTimeline(){
     const r = i + 3;
     const count = posts.filter(p => p.channelId === c.id).length;
     h += `<div class="ch" style="grid-row:${r};grid-column:1">
-      <span class="ch-name" data-ch="${c.id}" title="Clique para renomear">${esc(c.name)}</span>
+      <span class="ch-name" data-ch="${c.id}" title="Clique para editar">${esc(c.name)}</span>
       <span class="ch-count" title="Posts neste mês">${count}</span>
       <span class="ch-tools">
         <button class="ch-up" data-ch="${c.id}" aria-label="Mover ${esc(c.name)} para cima">${ICON.up}</button>
@@ -749,9 +938,95 @@ function renderTimeline(){
   h += `<div class="ch ch-add" style="grid-row:${r};grid-column:1"><form id="addChannel"><input name="name" placeholder="+ Novo canal" aria-label="Nome do novo canal" autocomplete="off"></form></div>`;
   h += `<div class="filler" style="grid-row:${r};grid-column:2/-1"></div>`;
   grid.innerHTML = h;
+  renderDayStrip();
 }
 
+function ensureTlDay(){
+  const n = daysIn(view.y, view.m);
+  if (!tlDay || tlDay > n) tlDay = TODAY.startsWith(monthPrefix()) ? Number(TODAY.slice(8)) : 1;
+}
+function renderTimelineMobile(dir){
+  ensureTlDay();
+  const { y, m } = view; const n = daysIn(y, m);
+  const ds = iso(y, m, tlDay); const dt = parseIso(ds);
+  const byCh = {};
+  monthPosts().filter(p => p.date === ds).forEach(p => (byCh[p.channelId] ||= []).push(p));
+  const total = Object.values(byCh).reduce((a, l) => a + l.length, 0);
+  const rows = chans().map(c => {
+    const list = byCh[c.id] || [];
+    return `<section class="dv-ch">
+      <div class="dv-ch-h"><span class="ch-name" data-ch="${c.id}">${esc(c.name)}</span>${list.length ? `<span class="n">${list.length}</span>` : ''}
+        <button class="add-ch" data-ch="${c.id}" data-date="${ds}" aria-label="Adicionar post em ${esc(c.name)}">${ICON.plus}</button></div>
+      <div class="dv-posts">${list.map(p => postHtml(p)).join('')}</div>
+    </section>`;
+  }).join('');
+  $('#dayview').innerHTML = `
+    <div class="dv-head">
+      <button class="icon-btn" data-dv="-1" aria-label="Dia anterior" ${tlDay <= 1 ? 'disabled' : ''}><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <div><h3>${fmtDate(ds)}</h3><p>Semana ${weekOfYear(dt)} · ${plural(total, 'post', 'posts')}</p></div>
+      <button class="icon-btn" data-dv="1" aria-label="Próximo dia" ${tlDay >= n ? 'disabled' : ''}><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+    </div>
+    <div class="dv-list${dir > 0 ? ' from-right' : dir < 0 ? ' from-left' : ''}">${rows}
+      <div class="dv-add"><form id="addChannel"><input name="name" placeholder="+ Novo canal" aria-label="Nome do novo canal" autocomplete="off"></form></div>
+    </div>`;
+  syncDayStrip(true);
+}
+function changeTlDay(dir){
+  const d = tlDay + dir;
+  if (d < 1 || d > daysIn(view.y, view.m)) return;
+  tlDay = d; renderTimelineMobile(dir);
+}
+(() => {
+  const dv = $('#dayview');
+  let sx = null, sy = null;
+  dv.addEventListener('click', e => { const b = e.target.closest('[data-dv]'); if (b) changeTlDay(+b.dataset.dv); });
+  dv.addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; }, { passive: true });
+  dv.addEventListener('touchend', e => {
+    if (sx === null) return;
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    sx = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) changeTlDay(dx < 0 ? 1 : -1);
+  }, { passive: true });
+})();
+function renderDayStrip(){
+  const el = $('#daystrip');
+  if (!isMobile()){ el.hidden = true; return; }
+  const { y, m } = view; const n = daysIn(y, m);
+  const counts = {};
+  monthPosts().forEach(p => counts[p.date] = (counts[p.date] || 0) + 1);
+  let h = '';
+  for (let d = 1; d <= n; d++){
+    const wd = new Date(y, m, d).getDay(), ds = iso(y, m, d);
+    h += `<button class="ds${ds === TODAY ? ' today' : ''}${wd === 1 && d > 1 ? ' wk' : ''}" data-day="${d}" aria-label="${fmtDate(ds)}"><span>${WD[wd]}</span><b>${d}</b><i class="${counts[ds] ? '' : 'z'}">${counts[ds] || ''}</i></button>`;
+  }
+  el.innerHTML = h; el.hidden = false;
+  curDay = 0; syncDayStrip(true);
+}
+const chWidth = () => parseInt(getComputedStyle(document.documentElement).getPropertyValue('--ch-w')) || 0;
+function visibleDay(){
+  const first = grid.querySelector('.dh');
+  if (!first) return 1;
+  return Math.min(daysIn(view.y, view.m), Math.max(1, Math.round(scroller.scrollLeft / first.offsetWidth) + 1));
+}
+function syncDayStrip(force){
+  if (!isMobile() || viewMode !== 'timeline') return;
+  ensureTlDay();
+  const d = tlDay;
+  if (d === curDay && !force) return;
+  curDay = d;
+  const el = $('#daystrip');
+  el.querySelectorAll('.ds.sel').forEach(b => b.classList.remove('sel'));
+  const b = el.querySelector(`[data-day="${d}"]`);
+  if (b){ b.classList.add('sel'); el.scrollTo({ left: b.offsetLeft - el.clientWidth / 2 + b.offsetWidth / 2, behavior: force || reduceMotion() ? 'auto' : 'smooth' }); }
+}
+$('#daystrip').addEventListener('click', e => {
+  const b = e.target.closest('[data-day]'); if (!b) return;
+  const d = +b.dataset.day; const dir = Math.sign(d - tlDay);
+  tlDay = d; renderTimelineMobile(dir);
+});
+
 function renderCalendar(){
+  if (isMobile()) return renderCalendarMobile();
   const { y, m } = view;
   const n = daysIn(y, m);
   const lead = (new Date(y, m, 1).getDay() + 6) % 7; // Monday first
@@ -775,6 +1050,54 @@ function renderCalendar(){
   }
   $('#month').innerHTML = h + '</div>';
 }
+
+function renderCalendarMobile(animate){
+  const { y, m } = view; const n = daysIn(y, m);
+  const posts = monthPosts();
+  const byDate = {};
+  posts.forEach(p => (byDate[p.date] ||= []).push(p));
+  if (!selDay || !selDay.startsWith(monthPrefix())){
+    selDay = TODAY.startsWith(monthPrefix()) ? TODAY : (Object.keys(byDate).sort()[0] || iso(y, m, 1));
+  }
+  const lead = (new Date(y, m, 1).getDay() + 6) % 7;
+  const total = Math.ceil((lead + n) / 7) * 7;
+  let g = '';
+  for (let i = 0; i < total; i++){
+    const dt = new Date(y, m, 1 - lead + i);
+    if (i % 7 === 0) g += `<span class="mm-wk" title="Semana ${weekOfYear(dt)} do ano">${weekOfYear(dt)}</span>`;
+    const inMonth = dt.getMonth() === m;
+    const ds = iso(dt.getFullYear(), dt.getMonth(), dt.getDate());
+    const list = inMonth ? (byDate[ds] || []) : [];
+    const dots = list.slice(0, 3).map(p => `<i style="background:${person(p.personId)?.color || '#94A3B8'}"></i>`).join('');
+    const wd = dt.getDay();
+    const cls = ['mm-day', !inMonth && 'out', ds === TODAY && 'today', ds === selDay && 'sel', (wd === 0 || wd === 6) && 'we'].filter(Boolean).join(' ');
+    g += `<button class="${cls}" data-sel="${ds}" aria-label="${fmtDate(ds)}${list.length ? ', ' + plural(list.length, 'post', 'posts') : ''}"><span class="n">${dt.getDate()}</span><span class="dots">${dots}</span></button>`;
+  }
+  const order = new Map(chans().map((c, i) => [c.id, i]));
+  const dayPosts = (byDate[selDay] || []).sort((a, b) => (order.get(a.channelId) ?? 99) - (order.get(b.channelId) ?? 99));
+  const sd = parseIso(selDay);
+  const list = dayPosts.length
+    ? dayPosts.map(p => postHtml(p, true)).join('')
+    : '<div class="ag-empty">Nenhum post neste dia.</div>';
+  $('#month').innerHTML = `
+    <div class="mm">
+      <div class="mm-head"><span></span>${['S','T','Q','Q','S','S','D'].map(d => `<span>${d}</span>`).join('')}</div>
+      <div class="mm-grid">${g}</div>
+    </div>
+    <div class="agenda">
+      <div class="ag-head">
+        <div><h3>${fmtDate(selDay)}</h3><p>Semana ${weekOfYear(sd)} · ${plural(dayPosts.length, 'post', 'posts')}</p></div>
+        <button class="btn primary add-day" data-date="${selDay}">${ICON.plus}Post</button>
+      </div>
+      <div class="ag-list${animate ? ' entering' : ''}">${list}</div>
+    </div>`;
+}
+$('#month').addEventListener('click', e => {
+  const b = e.target.closest('[data-sel]');
+  if (!b) return;
+  selDay = b.dataset.sel;
+  renderCalendarMobile(true);
+});
 
 /* ---------------- Charts ---------------- */
 function tile(label, value, sub, accent){
@@ -836,6 +1159,37 @@ function dayChart(){
     ${tableHtml(['Dia', 'Publicados', 'Pendentes', 'Total'], days.filter(x => x.pub + x.pen).map(x => [`${x.d}/${MONTHS_S[m]}`, x.pub, x.pen, x.pub + x.pen]))}
   </article>`;
 }
+function weekChart(){
+  const { y, m } = view; const n = daysIn(y, m);
+  const weeks = [];
+  for (let d = 1; d <= n; d++){
+    const w = weekOfYear(new Date(y, m, d));
+    let cur = weeks[weeks.length - 1];
+    if (!cur || cur.w !== w){ cur = { w, from: d, to: d, pub: 0, pen: 0 }; weeks.push(cur); }
+    cur.to = d;
+  }
+  monthPosts().forEach(p => { const d = Number(p.date.slice(8)); const wk = weeks.find(x => d >= x.from && d <= x.to); if (wk) p.done ? wk.pub++ : wk.pen++; });
+  const top = niceMax(Math.max(...weeks.map(x => x.pub + x.pen)));
+  const ticks = top <= 1 ? [top] : [Math.round(top / 2 * 10) / 10, top];
+  const lines = ticks.map(t => `<div class="gridline" style="bottom:${t / top * 100}%"><span>${t}</span></div>`).join('');
+  const todayD = TODAY.startsWith(monthPrefix()) ? Number(TODAY.slice(8)) : -9;
+  const cols = weeks.map(x => {
+    const segs = [];
+    if (x.pen) segs.push(`<span class="seg pen top" style="height:${x.pen / top * 100}%"></span>`);
+    if (x.pub) segs.push(`<span class="seg pub${x.pen ? '' : ' top'}" style="height:${x.pub / top * 100}%"></span>`);
+    return `<div class="col" data-tip="Semana ${x.w} (${x.from === x.to ? x.from : x.from + '–' + x.to} ${MONTHS_S[m]})" data-pub="${x.pub}" data-pen="${x.pen}"><div class="stack">${segs.join('')}</div></div>`;
+  }).join('');
+  const labels = weeks.map(x => `<span class="${todayD >= x.from && todayD <= x.to ? 'today' : ''}"><b>Sem. ${x.w}</b>${x.from === x.to ? x.from : x.from + '–' + x.to}</span>`).join('');
+  const busiest = weeks.reduce((a, b) => (b.pub + b.pen > a.pub + a.pen ? b : a), weeks[0]);
+  const sub = busiest.pub + busiest.pen ? `Semana mais cheia: ${busiest.w}` : '';
+  return `<article class="card chart wide"><header><h3>Ritmo por semana</h3><p>${sub}</p></header>
+    <div class="cols-wrap" role="img" aria-label="Posts por semana em ${MONTHS[m]}">
+      <div class="cols weeks">${lines}${cols}</div>
+      <div class="xlabels weeks">${labels}</div>
+    </div>
+    ${tableHtml(['Semana', 'Publicados', 'Pendentes', 'Total'], weeks.map(x => [`${x.w} (${x.from}–${x.to})`, x.pub, x.pen, x.pub + x.pen]))}
+  </article>`;
+}
 function renderCharts(){
   const posts = monthPosts();
   const pub = posts.filter(p => p.done).length, pen = posts.length - pub;
@@ -862,28 +1216,40 @@ function renderCharts(){
     <div class="charts-grid">
       ${hbarChart('Posts por responsável', top && top.pub + top.pen ? `${esc(top.label)} lidera com ${plural(top.pub + top.pen, 'post', 'posts')}` : '', peopleRows)}
       ${hbarChart('Posts por canal', `${plural(chRows.filter(r => r.pub + r.pen).length, 'canal ativo', 'canais ativos')}`, chRows)}
-      ${dayChart()}
+      ${isMobile() ? weekChart() : dayChart()}
     </div>`;
   $('#charts').innerHTML = h;
 }
 
-// Tooltip for chart marks (hit target = whole row / column)
+// Tooltip for chart marks (hit target = whole row / column); mouse hover or tap
 const tip = $('#tip');
-document.addEventListener('mousemove', e => {
-  const t = e.target.closest?.('#charts [data-tip]');
-  if (!t){ tip.classList.remove('show'); return; }
+function placeTip(t, cx, cy){
   const pub = +t.dataset.pub, pen = +t.dataset.pen;
   tip.innerHTML = `<b class="h">${esc(t.dataset.tip)}</b>
     <div class="r"><span><i class="sw pub"></i>Publicados</span><b>${pub}</b></div>
     <div class="r"><span><i class="sw pen"></i>Pendentes</span><b>${pen}</b></div>
     <div class="r" style="border-top:1px solid rgba(255,255,255,.15);margin-top:4px;padding-top:4px"><span>Total</span><b>${pub + pen}</b></div>`;
   const w = tip.offsetWidth, hgt = tip.offsetHeight;
-  let x = e.clientX + 14, y = e.clientY - hgt - 12;
-  if (x + w > innerWidth - 8) x = e.clientX - w - 14;
-  if (y < 8) y = e.clientY + 16;
+  let x = cx + 14, y = cy - hgt - 12;
+  if (x + w > innerWidth - 8) x = Math.max(8, cx - w - 14);
+  if (y < 8) y = cy + 16;
   tip.style.left = x + 'px'; tip.style.top = y + 'px';
   tip.classList.add('show');
+}
+document.addEventListener('mousemove', e => {
+  if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
+  const t = e.target.closest?.('#charts [data-tip]');
+  if (!t){ tip.classList.remove('show'); return; }
+  placeTip(t, e.clientX, e.clientY);
 });
+document.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse') return;
+  const t = e.target.closest?.('#charts [data-tip]');
+  if (!t){ tip.classList.remove('show'); return; }
+  const r = t.getBoundingClientRect();
+  placeTip(t, Math.min(r.left + r.width / 2, innerWidth - 24), r.top + Math.min(r.height / 2, 24));
+});
+addEventListener('scroll', () => tip.classList.remove('show'), { passive: true, capture: true });
 
 function renderPeople(){
   const prefix = monthPrefix();
@@ -899,9 +1265,8 @@ function renderPeople(){
       <input type="color" value="${p.color}" data-pc="${p.id}" aria-label="Cor de ${esc(p.name)}" title="Mudar cor">
       <button class="pname" data-p="${p.id}" aria-pressed="${focusPerson === p.id}" title="Destacar posts desta pessoa">${esc(p.name)}</button>
       <span class="pcount">${mine.length} no mês · ${done} ${done === 1 ? 'publicado' : 'publicados'}</span>
-      ${p.phone ? `<span class="pphone" title="Recebe lembretes no WhatsApp">${ICON.wa}${fmtPhone(p.phone)}</span>` : `<span class="pphone none" title="Sem WhatsApp: não recebe lembretes">${ICON.wa}sem WhatsApp</span>`}
       <span class="tools">
-        <button class="pedit" data-p="${p.id}" aria-label="Editar ${esc(p.name)}">${ICON.pencil}</button>
+        <button class="pedit" data-p="${p.id}" aria-label="Renomear ${esc(p.name)}">${ICON.pencil}</button>
         <button class="pdel" data-p="${p.id}" aria-label="Remover ${esc(p.name)}">${ICON.x}</button>
       </span>
     </div>`;
@@ -940,6 +1305,7 @@ $('#tabs').addEventListener('keydown', e => {
   setView(v, false); document.querySelector(`.tab[data-view="${v}"]`).focus();
 });
 addEventListener('resize', moveIndicator);
+mq.addEventListener('change', () => { moveIndicator(); if (currentUser) render(); });
 document.addEventListener('animationend', e => e.target.classList?.remove('entering', 'enter', 'ticked'));
 
 /* ---------------- Dialog ---------------- */
@@ -1041,38 +1407,67 @@ document.querySelector('main').addEventListener('click', e => {
   }
   const post = t.closest('.post');
   if (post) return openPost({ id: post.dataset.id });
+  const addCh = t.closest('.add-ch');
+  if (addCh) return openPost({ ch: addCh.dataset.ch, date: addCh.dataset.date });
+  const addDay = t.closest('.add-day');
+  if (addDay) return openPost({ date: addDay.dataset.date, pickChannel: true });
   const add = t.closest('.add');
   if (add){
     const cell = add.closest('.cell');
     if (cell) return openPost({ ch: cell.dataset.ch, date: cell.dataset.date });
     return openPost({ date: add.dataset.date, pickChannel: true });
   }
-  const chName = t.closest('.ch-name');
-  if (chName){
-    const c = channel(chName.dataset.ch);
-    return promptText('Renomear canal', c.name, 'Nome do canal', v => { c.name = v; commit(upsert('channels', c)); });
-  }
+  const chName = t.closest('.ch-name, .ch:not(.ch-add)');
+  if (chName && !t.closest('.ch-tools')){ const id = chName.dataset.ch || chName.querySelector('.ch-name')?.dataset.ch; if (id) return editChannel(channel(id)); }
   const del = t.closest('.ch-del');
-  if (del){
-    const c = channel(del.dataset.ch);
-    const count = state.posts.filter(p => p.channelId === c.id).length;
-    if (!confirm(`Remover o canal "${c.name}"?` + (count ? `\n\nOs ${count} post(s) desse canal também serão apagados.` : ''))) return;
-    const gone = state.posts.filter(p => p.channelId === c.id).map(p => p.id);
-    commit(remove('channels', c.id), gone.map(id => remove('posts', id)));
-    toast('Canal removido');
-    return;
-  }
+  if (del) return deleteChannel(del.dataset.ch);
   const mv = t.closest('.ch-up, .ch-down');
-  if (mv){
-    const list = chans();
-    const i = list.findIndex(c => c.id === mv.dataset.ch);
-    const j = i + (mv.classList.contains('ch-up') ? -1 : 1);
-    if (j < 0 || j >= list.length) return;
-    [list[i], list[j]] = [list[j], list[i]];
-    commit(list.map((c, k) => { c.order = k; return upsert('channels', c); }));
-  }
+  if (mv) moveChannel(mv.dataset.ch, mv.classList.contains('ch-up') ? -1 : 1);
 });
 
+function moveChannel(id, dir){
+  const list = chans();
+  const i = list.findIndex(c => c.id === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= list.length) return false;
+  [list[i], list[j]] = [list[j], list[i]];
+  commit(list.map((c, k) => { c.order = k; return upsert('channels', c); }));
+  return true;
+}
+function deleteChannel(id){
+  const c = channel(id); if (!c) return false;
+  const count = state.posts.filter(p => p.channelId === c.id).length;
+  if (!confirm(`Remover o canal "${c.name}"?` + (count ? `\n\nOs ${count} post(s) desse canal também serão apagados.` : ''))) return false;
+  const gone = state.posts.filter(p => p.channelId === c.id).map(p => p.id);
+  commit(remove('channels', c.id), gone.map(pid => remove('posts', pid)));
+  toast('Canal removido');
+  return true;
+}
+function editChannel(c){
+  if (!c) return;
+  openDialog(`<div><h3>Editar canal</h3><p class="sub">Renomeie, mude a posição ou exclua.</p></div>
+    <label class="field">Nome<input type="text" name="name" required value="${esc(c.name)}" autocomplete="off"></label>
+    <div class="row-btns">
+      <button type="button" class="btn" data-ch-act="up">${ICON.up}Subir</button>
+      <button type="button" class="btn" data-ch-act="down">${ICON.down}Descer</button>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn danger" data-ch-act="del">Excluir</button>
+      <span class="sp"></span>
+      <button type="button" class="btn" data-act="cancel">Cancelar</button>
+      <button class="btn primary">Salvar</button>
+    </div>`,
+    fd => { const v = fd.get('name').trim(); if (!v) return false; if (v !== c.name) commit(upsert('channels', { ...channel(c.id), name: v })); });
+  dlgForm.dataset.ch = c.id;
+}
+dlgForm.addEventListener('click', e => {
+  const b = e.target.closest('[data-ch-act]'); if (!b) return;
+  const id = dlgForm.dataset.ch; if (!id) return;
+  const act = b.dataset.chAct;
+  if (act === 'del'){ dlg.close(); deleteChannel(id); return; }
+  if (moveChannel(id, act === 'up' ? -1 : 1)) toast(act === 'up' ? 'Canal subiu' : 'Canal desceu');
+});
+dlg.addEventListener('close', () => { delete dlgForm.dataset.ch; });
 document.querySelector('main').addEventListener('dblclick', e => {
   if (e.target.closest('.post, button')) return;
   const cell = e.target.closest('.cell');
@@ -1081,7 +1476,7 @@ document.querySelector('main').addEventListener('dblclick', e => {
   if (day) openPost({ date: day.dataset.date, pickChannel: true });
 });
 
-grid.addEventListener('submit', e => {
+document.querySelector('main').addEventListener('submit', e => {
   if (e.target.id !== 'addChannel') return;
   e.preventDefault();
   const name = e.target.name.value.trim();
@@ -1170,24 +1565,23 @@ scroller.addEventListener('wheel', e => {
 }, { passive: false });
 
 function scrollToDay(day){
+  if (isMobile()){ tlDay = day; if (viewMode === 'timeline') renderTimelineMobile(0); return; }
   const el = [...grid.querySelectorAll('.dh')][day - 1];
   if (!el) return;
-  const chW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--ch-w'));
-  scroller.scrollLeft = Math.max(0, el.offsetLeft - chW - el.offsetWidth);
+  scroller.scrollLeft = Math.max(0, el.offsetLeft - chWidth() - (isMobile() ? 0 : el.offsetWidth));
+  syncDayStrip(true);
 }
 
 /* ---------------- People ---------------- */
 $('#addPerson').addEventListener('submit', e => {
   e.preventDefault();
-  const inp = $('#personInput'), ph = $('#phoneInput');
+  const inp = $('#personInput');
   const name = inp.value.trim();
   if (!name) return;
-  const phone = normPhone(ph.value);
-  if (phone === null){ ph.setCustomValidity('Use DDD + número, ex.: (11) 98765-4321'); ph.reportValidity(); return; }
   const used = state.people.map(p => p.color.toLowerCase());
   const color = COLORS.find(c => !used.includes(c)) || COLORS[state.people.length % COLORS.length];
-  inp.value = ''; ph.value = '';
-  commit(upsert('people', { id: uid(), name, color, phone }));
+  inp.value = '';
+  commit(upsert('people', { id: uid(), name, color }));
   toast(`${name} adicionado(a)`);
   inp.focus();
 });
@@ -1207,21 +1601,8 @@ $('#people').addEventListener('click', e => {
     commit(remove('people', p.id), orphaned);
   }
 });
-$('#phoneInput').addEventListener('input', e => e.target.setCustomValidity(''));
 function editPerson(p){
-  openDialog(`<div><h3>Editar responsável</h3><p class="sub">O WhatsApp recebe os lembretes às 13h do dia anterior.</p></div>
-    <label class="field">Nome<input type="text" name="name" required value="${esc(p.name)}" autocomplete="off"></label>
-    <label class="field">WhatsApp com DDD<input type="text" name="phone" inputmode="tel" value="${esc(fmtPhone(p.phone))}" placeholder="(11) 98765-4321" autocomplete="off"></label>
-    <div class="actions"><span class="sp"></span><button type="button" class="btn" data-act="cancel">Cancelar</button><button class="btn primary">Salvar</button></div>`,
-    fd => {
-      const name = fd.get('name').trim();
-      const phone = normPhone(fd.get('phone'));
-      const f = dlgForm.querySelector('[name=phone]');
-      if (phone === null){ f.setCustomValidity('Use DDD + número, ex.: (11) 98765-4321'); f.reportValidity(); f.oninput = () => f.setCustomValidity(''); return false; }
-      if (!name) return false;
-      commit(upsert('people', { ...p, name, phone }));
-      toast('Responsável atualizado');
-    });
+  promptText('Renomear responsável', p.name, 'Nome', v => { commit(upsert('people', { ...p, name: v })); toast('Responsável atualizado'); });
 }
 $('#people').addEventListener('change', e => {
   const c = e.target.closest('[data-pc]');
@@ -1242,11 +1623,13 @@ function go(delta){
   view.m += delta;
   if (view.m < 0){ view.m = 11; view.y--; }
   if (view.m > 11){ view.m = 0; view.y++; }
+  selDay = null;
+  tlDay = 0;
   render(); scroller.scrollLeft = 0;
 }
 $('#prev').onclick = () => go(-1);
 $('#next').onclick = () => go(1);
-$('#todayBtn').onclick = () => { view = { y: now.getFullYear(), m: now.getMonth() }; render(); if (viewMode === 'timeline') scrollToDay(now.getDate()); };
+$('#todayBtn').onclick = () => { view = { y: now.getFullYear(), m: now.getMonth() }; selDay = TODAY; render(); if (viewMode === 'timeline') scrollToDay(now.getDate()); };
 
 $('#exportBtn').onclick = () => {
   const blob = new Blob([JSON.stringify({ channels: state.channels, people: state.people, posts: state.posts }, null, 2)], { type: 'application/json' });
@@ -1274,12 +1657,113 @@ function toast(msg){
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1900);
 }
 
+/* ---------------- Accounts (usuário + senha) ----------------
+   Supabase Auth needs an e-mail, so the username becomes an internal address
+   that the person never sees or types. */
+const EMAIL_DOMAIN = 'calendariomarketing.vercel.app';
+const toEmail = u => `${u}@${EMAIL_DOMAIN}`;
+const userName = u => u?.user_metadata?.username || (u?.email || '').split('@')[0];
+let authMode = 'login';
+
+function showAuth(){
+  document.body.classList.add('locked');
+  $('#auth').hidden = false;
+  setTimeout(() => $('#authForm [name=user]').focus(), 60);
+}
+function hideAuth(){ $('#auth').hidden = true; document.body.classList.remove('locked'); }
+function setAuthMode(m){
+  authMode = m;
+  document.querySelectorAll('#authTabs [data-mode]').forEach(b => b.setAttribute('aria-selected', b.dataset.mode === m));
+  $('#pass2Field').hidden = m !== 'signup';
+  $('#authHint').hidden = m !== 'signup';
+  $('#authErr').hidden = true;
+  $('#authBtn').textContent = m === 'signup' ? 'Criar conta' : 'Entrar';
+  $('#authSub').textContent = m === 'signup' ? 'Escolha um usuário e uma senha' : 'Entre para ver o seu calendário';
+  $('#authForm [name=pass]').autocomplete = m === 'signup' ? 'new-password' : 'current-password';
+}
+$('#authTabs').addEventListener('click', e => { const b = e.target.closest('[data-mode]'); if (b) setAuthMode(b.dataset.mode); });
+function authMessage(e){
+  const m = String(e?.message || '').toLowerCase();
+  if (m === 'confirm' || m.includes('not confirmed') || m.includes('sending')) return 'A conta precisa de confirmação de e-mail no Supabase. Desligue “Confirm email” em Authentication → Sign In / Providers → Email.';
+  if (m.includes('invalid login')) return 'Usuário ou senha incorretos.';
+  if (m.includes('already')) return 'Esse usuário já existe. Escolha outro ou entre na conta.';
+  if (m.includes('password')) return 'Senha fraca: use pelo menos 6 caracteres.';
+  if (m.includes('rate limit') || m.includes('too many')) return 'Muitas tentativas seguidas. Espere um minuto e tente de novo.';
+  if (m.includes('signups not allowed') || m.includes('signup')) return 'A criação de contas está desligada no Supabase.';
+  return 'Não deu certo: ' + (e?.message || 'erro desconhecido');
+}
+$('#authForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target;
+  const u = f.user.value.trim().toLowerCase();
+  const p = f.pass.value;
+  const err = msg => { const el = $('#authErr'); el.textContent = msg; el.hidden = false; };
+  if (!/^[a-z0-9._-]{3,30}$/.test(u)) return err('Usuário inválido: use de 3 a 30 letras, números, ponto, traço ou _ (sem espaços e sem acentos).');
+  if (p.length < 6) return err('A senha precisa ter pelo menos 6 caracteres.');
+  if (authMode === 'signup' && p !== f.pass2.value) return err('As senhas não são iguais.');
+  if (!sb) return err('Não foi possível carregar o Supabase. Verifique a internet e recarregue.');
+  const btn = $('#authBtn'), label = btn.textContent;
+  btn.disabled = true; btn.textContent = authMode === 'signup' ? 'Criando conta…' : 'Entrando…';
+  try {
+    let res;
+    if (authMode === 'signup'){
+      res = await sb.auth.signUp({ email: toEmail(u), password: p, options: { data: { username: u } } });
+      if (!res.error && !res.data.session) res.error = { message: 'confirm' };
+    } else {
+      res = await sb.auth.signInWithPassword({ email: toEmail(u), password: p });
+    }
+    if (res.error) return err(authMessage(res.error));
+    f.reset(); setAuthMode('login');
+  } catch (x) { err(authMessage(x)); }
+  finally { btn.disabled = false; btn.textContent = authMode === 'signup' ? 'Criar conta' : 'Entrar'; }
+});
+
+function maybeSeed(){
+  if (!currentUser) return;
+  const k = 'mktcal.seeded.' + currentUser.id;
+  const hasData = state.channels.length || state.people.length || state.posts.length;
+  try {
+    if (hasData){ localStorage.setItem(k, '1'); return; }
+    if (localStorage.getItem(k)) return;
+    localStorage.setItem(k, '1');
+  } catch(e){}
+  commit(['Instagram', 'TikTok', 'LinkedIn', 'Blog'].map((name, i) => upsert('channels', { id: uid(), name, order: i })));
+}
+
+function startApp(user){
+  if (currentUser && currentUser.id === user.id) return;
+  currentUser = user;
+  queue = []; needFetch = false; focusPerson = null; online = null;
+  loadCache();
+  const name = userName(user);
+  $('#userName').textContent = name;
+  $('#userAvatar').textContent = (name[0] || '?');
+  hideAuth();
+  setView(viewMode, false);
+  requestAnimationFrame(moveIndicator);
+  subscribe();
+  pull();
+}
+function stopApp(){
+  if (rtChannel){ sb.removeChannel(rtChannel); rtChannel = null; }
+  currentUser = null; channelOk = false; online = null; queue = [];
+  state = { channels: [], people: [], posts: [] };
+  const live = $('#live'); live.className = 'live load'; live.textContent = 'Conectando…';
+  showAuth();
+}
+$('#logoutBtn').onclick = async () => { await sb.auth.signOut(); };
+
 /* ---------------- Boot ---------------- */
-setView(viewMode, false);
 requestAnimationFrame(() => { moveIndicator(); requestAnimationFrame(() => tabInd.classList.add('ready')); });
 document.fonts?.ready.then(moveIndicator);
-subscribe();
-pull();
+if (sb){
+  sb.auth.onAuthStateChange((event, session) => {
+    // defer: calling Supabase inside this callback can deadlock
+    setTimeout(() => { if (session?.user) startApp(session.user); else stopApp(); }, 0);
+  });
+} else {
+  showAuth();
+}
 </script>
 </body>
 </html>
